@@ -1,0 +1,268 @@
+\documentclass{anstrans}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{The Coarse-Scattering Multigroup Method for Radiation Transport}  
+\author{Pablo A. Vaquer$^{\star}$, Ryan G. McClarren$^{\dagger}$, Teresa S. Bailey$^{*}$, $\&$ Cheuk Y. Lau$^{*}$}
+
+\institute{
+$^{\star}$Texas A$\&$M University, College Station, TX, mdcpablo@tamu.edu 
+\and
+$^{\dagger}$University of Notre Dame, Notre Dame, IN, rmcclarr@nd.edu
+\and
+$^{*}$Lawrence Livermore National Laboratory, Livermore, CA, bailey42@llnl.gov, lau20@llnl.gov
+}
+
+%%%% packages and definitions (optional)
+\usepackage{graphicx} % allows inclusion of graphics
+\usepackage{booktabs} % nice rules (thick lines) for tables
+\usepackage{microtype} % improves typography for PDF
+\usepackage{amsmath}
+\usepackage{mathtools}
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\usepackage{xcolor}
+
+\newcommand{\SN}{S$_N$}
+\renewcommand{\vec}[1]{\bm{#1}} %vector is bold italic
+\newcommand{\vd}{\bm{\cdot}} % slightly bold vector dot
+\newcommand{\grad}{\vec{\nabla}} % gradient
+\newcommand{\ud}{\mathop{}\!\mathrm{d}} % upright derivative symbol
+
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+The multigroup (MG) energy discretization for radiation transport involves partitioning the energy domain into groups consisting of a contiguous portion of the energy domain \cite{Lewis1993}. In MG, computing the total scattering into group $g$ is computationally expensive because it requires summing the contribution of scattering from initial group $g'$ to the final group $g$, for all initial groups. In this study, we introduce the coarse-scattering (CS) method as a way to reduce the degrees of freedom required to simulate scattering. The CS method consists of a fine-group energy grid and coarse-element energy grid, where each fine-group $g$ is a subset of a coarse-element $e$. The benefit of CS is that computing the total scattering into group $g$, only requires summing the contribution of scattering from initial element $e'$ to the final element $e$ and then mapping back to fine-group $g$, which results in fewer number of computations.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Theory}
+In CS, each fine-group $g$ is a subset of a coarse-element $e$, which reduces the size of the scattering transfer matrices,
+\begin{equation}
+\label{Eq.scatter}
+\sum_{g'} \sigma_{s,\ell,g'\to g} \phi_{\ell,g'} = S_{\ell,e\to g} \sum_{e'} \sigma_{s,\ell,e'\to e} \phi_{\ell,e'} \: ,
+\end{equation}
+where $\sigma_{s,\ell,g'\to g}$ is the group-to-group scattering matrix for the $\ell^\text{th}$-Legendre moment, $\sigma_{s,\ell,e'\to e}$ is the element-to-element scattering matrix for the $\ell^\text{th}$-Legendre moment, $\phi_{\ell,g'}$ is the $\ell^\text{th}$ flux moment for energy group $g'$, $\phi_{\ell,e'}$ is the $\ell^\text{th}$ flux moment for element $e'$, and $S_{\ell,e\to g}$ is the scattering spectrum, defined as
+\begin{equation*}
+\label{Eq.S}
+S_{\ell,e\to g}  = \frac{\sum_{g'} \sigma_{s,\ell,g'\to g} \phi_{\ell,g'}}{ \sum_{e'} \sigma_{s,\ell,e'\to e} \phi_{\ell,e'}} \: ,
+\end{equation*}
+\begin{equation*}
+\sigma_{s,\ell,e'\to e} = \sum_{g \in e} \sum_{g' \in e'} \sigma_{s,\ell,g'\to g} \: ,
+\end{equation*}
+\begin{equation*}
+\phi_{\ell,e} = \sum_{g \in e} \phi_{\ell,g} \: .
+\end{equation*}
+\subsection{Derviation of the CS transport equation}
+In this derivation, we generalized both the fine-groups and coarse-elements to have a discontiguous support in energy and borrowed a few pages from the derivation of the FEDS transport equation \cite{Till2015}. This derviation will be carried out for the spherical harmonics expansion of the neutron transport equation (for a non-fissionable material) \cite{Gelbard1960},
+\begin{multline*}
+\label{Eq:transport_E}
+\frac{1}{v(E)} \frac{\partial \psi}{\partial t} + \hat{\Omega} \cdot \nabla \psi+ \sigma_{t}(\vec{r},E) \psi(\vec{r},\hat{\Omega},E,t) = q(\vec{r},\hat{\Omega},E,t) + \\ \sum_{\ell=0}^L \sum_{m=-\ell}^\ell \frac{2 \ell + 1}{4 \pi} Y_\ell^m(\hat{\Omega}) \int_0^\infty dE' \, \sigma_{s,\ell}(\vec{r},E' \to E) \phi_{\ell}^m(\vec{r},E',t)  \: .
+\end{multline*}
+where $v$ is neutron speed, $\vec{r}$ is position, $\hat{\Omega}$ is neutron direction-of-flight, $E$ is neutron energy, $t$ is time, $\psi$ is the angular flux, and $q$ is the extraneous source. We approximate the angular flux as
+\begin{equation*}
+\psi(\vec{r},\hat{\Omega},E,t) \approx \sum_g \psi_g(\vec{r},\hat{\Omega},t) b_g(\vec{r},E) \: ,
+\end{equation*}
+where the basis functions $b_g(\vec{r}, E)$ are defined as,
+\begin{equation}
+\label{Eq.basis}
+b_g(\vec{r},E) = w_g(E) C_g(\vec{r}) f(\vec{r}, E)
+\end{equation}
+where $f(\vec{r}, E)$ is an approximation of the neutron spectrum at location $\vec{r}$, and the weight functions are,
+\begin{equation*}
+\label{Eq:w_g}
+w_g(E) = \left\{ \begin{array}{cc} 
+                1 & \hspace{5mm} E \in \Delta E_g \\
+                0 & \hspace{5mm} \text{otherwise} \\
+                \end{array} \right. \:.
+\end{equation*}
+Finally, we normalize the basis functions by computing $C_g(\vec{r})$ as
+\begin{equation*}
+C_g(\vec{r}) = \Bigg[ \int_{\Delta E_g}} f(\vec{r},E)  dE} \Bigg]^{-1} \: .
+\end{equation*}
+This results in basis functions and weight functions which are orthonormal, 
+\begin{equation*}
+\int_0^\infty dE \, w_g(E) b_g(E) = \delta_{g,n} \: .
+\end{equation*} 
+We leverage orthonormality to write the transport equation as 
+\begin{multline}
+\label{Eq.mg_transport}
+\Bigg[\frac{1}{v_g} \frac{\partial}{\partial t} + \hat{\Omega} \cdot \nabla + \sigma_{t,g}(\vec{r}) \Bigg] \psi_g(\vec{r},\hat{\Omega},t)  = q_g(\vec{r},\hat{\Omega},t) + \\ \sum_{\ell=0}^L \sum_{m=-\ell}^\ell \frac{2 \ell + 1}{4 \pi} Y_\ell^m(\hat{\Omega}) \sum_{g'} \sigma_{s,\ell, g' \to g}  \phi_{\ell,g'}^m(\vec{r},t) \: .
+\end{multline} 
+In addition, orthonormality implies that each unknown $\psi_g$ is physically equivalent to the angular flux integrated over a fine-group $g$. This is shown by,
+\begin{equation*}
+\int_0^\infty dE \, w_n(E) \sum_g \psi_g(\vec{r},\hat{\Omega},t) b_g(\vec{r},E)  = \sum_g \delta_{g,n} \psi_g(\vec{r},\hat{\Omega},t) \: ,
+\end{equation*}
+\begin{equation*}
+\int_0^\infty dE \, w_n(E) \sum_g \psi_g(\vec{r},\hat{\Omega},t) b_g(\vec{r},E)  = \psi_n(\vec{r},\hat{\Omega},t) \: ,
+\end{equation*}
+\begin{equation*}
+\int_0^\infty dE \, w_n(E) \psi(\vec{r},\hat{\Omega},E, t) = \psi_n(\vec{r},\hat{\Omega},t) \: .
+\end{equation*}
+The novel part of this derivation is that we can define a fine-group $g$ as being a subset of a coarse-element $e$ and doing so leads to the coarse-element flux $\psi_e$ being physically equivalent to the angular flux integrated over element $e$,
+\begin{equation*}
+\psi_e(\vec{r},\hat{\Omega},t) = \sum_{g \in e} \psi_g(\vec{r},\hat{\Omega},t) \:. 
+\end{equation*}
+Now we can substitute Eq.(\ref{Eq.scatter}) into Eq.(\ref{Eq.mg_transport}) to derive the CS neutron transport equation, 
+\begin{multline*}
+\label{Eq.CS}
+\Bigg[\frac{1}{v_g} \frac{\partial}{\partial t} + \hat{\Omega} \cdot \nabla + \sigma_{t,g}(\vec{r}) \Bigg] \psi_g(\vec{r},\hat{\Omega},t)  = q_g(\vec{r},\hat{\Omega},t) + \\ \sum_{\ell=0}^L \sum_{m=-\ell}^\ell \frac{2 \ell + 1}{4 \pi} Y_\ell^m(\hat{\Omega}) S_{\ell,e\to g}(\vec{r}) \sum_{e'} \sigma_{s,\ell,e'\to e}(\vec{r}) \phi_{\ell,e'}^m(\vec{r},t) \: .
+\end{multline*}
+In the extreme case, where there is only a single coarse-element that spans the entire energy domain, the CS transport equation reduces to a transport equation with no transfer matrix,
+\begin{multline*}
+\label{Eq.CS_extreme}
+\Bigg[\frac{1}{v_g} \frac{\partial}{\partial t} + \hat{\Omega} \cdot \nabla + \sigma_{t,g}(\vec{r}) \Bigg] \psi_g(\vec{r},\hat{\Omega},t)  = q_g(\vec{r},\hat{\Omega},t) + \\ \sum_{\ell=0}^L \sum_{m=-\ell}^\ell \frac{2 \ell + 1}{4 \pi} Y_\ell^m(\hat{\Omega}) S_{\ell,g}(\vec{r}) \sigma_{s,\ell}(\vec{r}) \phi_{\ell}^m(\vec{r},t) \: .
+\end{multline*}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Three-Group Test Problem}
+A 3-group infinite-medium test problem was designed to compare CS to MG. For MG the energy domain was discretized in 3 energy groups, while for CS the energy domain was discretized into 3 fine-groups that were a subset of 1 coarse-element. 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Solution using MG}
+The MG equation for this 3-group problem is
+\begin{equation*}
+\begin{bmatrix}
+\sigma_{t,1} & 0 & 0\\
+0  & \sigma_{t,2} & 0\\
+0 & 0 & \sigma_{t,3}\\
+\end{bmatrix}
+\begin{bmatrix}
+\phi_1\\
+\phi_2\\
+\phi_3\\
+\end{bmatrix}
+=
+\begin{bmatrix}
+\sigma_{1 \to 1} & \sigma_{2 \to 1} & \sigma_{3 \to 1}\\
+\sigma_{1 \to 2} & \sigma_{2 \to 2} & \sigma_{3 \to 2}\\
+\sigma_{1 \to 3} & \sigma_{2 \to 3} & \sigma_{3 \to 3}\\
+\end{bmatrix}
+\begin{bmatrix}
+\phi_1\\
+\phi_2\\
+\phi_3\\
+\end{bmatrix}
++
+\begin{bmatrix}
+q_1\\
+q_2\\
+q_3\\
+\end{bmatrix} \: .
+\end{equation*}
+We provided arbitrary values for the total cross section, the scattering matrix, and the extraneous source,
+\begin{equation*}
+\begin{bmatrix}
+10 & 0 & 0\\
+0  & 5 & 0\\
+0 & 0 & 5 \\
+\end{bmatrix}
+\begin{bmatrix}
+\phi_1\\
+\phi_2\\
+\phi_3\\
+\end{bmatrix}
+=
+\begin{bmatrix}
+1 & 0 & 0 \\
+1 & 2 & 1 \\
+1 & 1 & 3 \\
+\end{bmatrix}
+\begin{bmatrix}
+\phi_1\\
+\phi_2\\
+\phi_3\\
+\end{bmatrix}
++
+\begin{bmatrix}
+9\\
+4\\
+14\\
+\end{bmatrix} \: .
+\end{equation*}
+After solving the MG equation, we computed the following 3-group flux to be
+\begin{equation*}
+\phi_1 = 1, \quad\quad \phi_2 = 5, \quad\quad \phi_3 = 10.
+\end{equation*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Solution using CS}
+The CS equation, with 3 fine-groups that are a subset of a single coarse-element, is
+\begin{equation*}
+\begin{bmatrix}
+\sigma_{t,1} & 0 & 0\\
+0  & \sigma_{t,2} & 0\\
+0 & 0 & \sigma_{t,3}\\
+\end{bmatrix}
+\begin{bmatrix}
+\phi_1\\
+\phi_2\\
+\phi_3\\
+\end{bmatrix}
+=
+\sigma_{s,e} \phi_e
+\begin{bmatrix}
+S_{e \to 1}\\
+S_{e \to 2}\\
+S_{e \to 3}\\
+\end{bmatrix}
++
+\begin{bmatrix}
+q_1\\
+q_2\\
+q_3\\
+\end{bmatrix} \: ,
+\end{equation*}
+where 
+\begin{multline*}
+\sigma_{s,e} = \sigma_{1 \to 1} + \sigma_{2 \to 1} + \sigma_{3 \to 1} + \\ \sigma_{1 \to 2} + \sigma_{2 \to 2} + \sigma_{3 \to 2} + \sigma_{1 \to 3} + \sigma_{2 \to 3} + \sigma_{3 \to 3} \: , 
+\end{multline*}
+\begin{equation*}
+\phi_e = \phi_1 + \phi_2 + \phi_3 \: ,
+\end{equation*}
+\begin{equation*}
+\begin{bmatrix}
+S_{e \to 1}\\
+S_{e \to 2}\\
+S_{e \to 3}\\
+\end{bmatrix} 
+=
+\frac{1}{\sigma_e \phi_e}
+\begin{bmatrix}
+\sigma_{1 \to 1} & \sigma_{2 \to 1} & \sigma_{3 \to 1}\\
+\sigma_{1 \to 2} & \sigma_{2 \to 2} & \sigma_{3 \to 2}\\
+\sigma_{1 \to 3} & \sigma_{2 \to 3} & \sigma_{3 \to 3}\\
+\end{bmatrix}
+\begin{bmatrix}
+\phi_1\\
+\phi_2\\
+\phi_3\\ 
+\end{bmatrix} \: .
+\end{equation*}
+The same parameter values that were used in the MG problem were also used in the CS problem. Using these values, the coarse-element cross section was computed to be $\sigma_{s,e} = 10$, and the coarse-element flux was computed to be $\phi_e = 16$. By assuming the fluxes were known prior to solving the 3-group CS equation, we were able to compute the scattering spectrum as
+\begin{equation*}
+S_{e \to 1} = 1/160, \quad\quad S_{e \to 2} = 21/160, \quad\quad S_{e \to 3} = 36/160.
+\end{equation*}
+Since the flux was known in this case, the CS solution was the same as the MG solution. 
+
+If the fluxes were unknown, an iteration scheme like source iteration could be used to converge to the correct value for the 3-group flux \cite{Spinks1967}. We compared MG with source iteration to CS with source iteration. The initial guess for 3-group flux was 1 n/cm$^2$s per group for each method. For CS, $S_{e \to g}$ was recomputed every $R$ number of source iterations. 
+\begin{table}[htb]
+\centering
+  \caption{MG and CS source iteration convergence.}
+  \begin{tabular}{cccc}
+  Energy Discretization & $R$ & $N_\text{SI}$ & \textcolor[rgb]{0., 0.7, 0.35}{$N_R$} \\ \midrule
+                     MG &  -  &     86        & \textcolor[rgb]{0., 0.7, 0.35}{-}  \\
+                     CS &  1  &     86        & \textcolor[rgb]{0., 0.7, 0.35}{86} \\
+                     CS &  2  &     75        & \textcolor[rgb]{0., 0.7, 0.35}{38} \\
+                     CS &  3  &     92        & \textcolor[rgb]{0., 0.7, 0.35}{31} \\
+                     CS &  5  &     124       & \textcolor[rgb]{0., 0.7, 0.35}{25} \\
+                     CS &  10 &     208       & \textcolor[rgb]{0., 0.7, 0.35}{21} \\
+\end{tabular}
+  \label{Tab.SI}
+\end{table}
+
+\noindent In Table \ref{Tab.SI}, $N_\text{SI}$ is the number of source iterations required to converged the error in the 3-group flux to machine epsilon. Note, each MG source iteration requires $O(G^2)$ computations. For this test problem, each CS source iteration only requires $O(G)$ computations, unless the scattering spectrum $S_{e \to g}$ is recomputed, in which case that specific iteration requires $O(G^2)$ computations. In Table \ref{Tab.SI}, we also listed the values of $N_R$, which represents the total number of times that the scattering spectrum $S_{e \to g}$ was recomputed before the CS source iterations converged.
+
+\section{Conclusions}
+We presented the CS method as a way to reduce the degrees of freedom required to simulate scattering. We demonstrated that the MG method is equivalent to the CS method when the scattering spectrum $S_{e \to g}$ is recomputed every source iteration. We also showed that is possible to converge source iterations without having to recompute the scattering spectrum every source iteration. By doing so, the source iterations were able to converge with fewer number of scattering spectrum recomputations, and thus fewer computations overall. The CS method will likely produce the greatest reduction in run time for radiation transport simulations where the quantity of interest converges slower than the scattering spectrum. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bibliographystyle{ans}
+\bibliography{bibliography}
+\end{document}
+
