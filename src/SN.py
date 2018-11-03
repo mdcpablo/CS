@@ -387,27 +387,26 @@ def power_iterations(mesh, eigenvalue, discretization, mode='normal', L_max=9, S
                             coarse_phi[e,moment,i] += phi[g,moment,i]
             return coarse_phi
 
-        def recompute_S_eg(e, phi, coarse_phi):
-            S_e = np.zeros((G,L,I)); count=0
+        def recompute_S_eg(moment, e, phi, coarse_phi):
+            S_moment_e = np.zeros((G,I)); count=0
             for i in range(I):
                 p = mesh.mat_p[mesh.cell_mat[i]]
                 coarse_p = mesh.mat_coarse_p[mesh.cell_mat[i]]
-                for moment in range(L):
-                    for g in mapping[e]:   
-                        numer = 0. 
-                        denom = 0.
-                        for ep in range(E):
-                            denom += coarse_p[moment][ep,e]*coarse_phi[ep,moment,i]+1e-16  #denom += (coarse_p[moment][ep,e]+1e-14)*(coarse_phi[ep,moment,i]+1e-14) 
+                for g in mapping[e]:   
+                    numer = 0. 
+                    denom = 0.
+                    for ep in range(E):
+                        denom += coarse_p[moment][ep,e]*coarse_phi[ep,moment,i]+1e-16  #denom += (coarse_p[moment][ep,e]+1e-14)*(coarse_phi[ep,moment,i]+1e-14) 
+                        count += 1
+                        for gp in mapping[ep]:   
+                            numer += p[moment][gp,g]*phi[gp,moment,i]+1e-16  #numer += (p[moment][gp,g]+1e-14)*(phi[gp,moment,i]+1e-14) 
                             count += 1
-                            for gp in mapping[ep]:   
-                                numer += p[moment][gp,g]*phi[gp,moment,i]+1e-16  #numer += (p[moment][gp,g]+1e-14)*(phi[gp,moment,i]+1e-14) 
-                                count += 1
-                            S_e[g,moment,i] = numer/denom
+                        S_moment_e[g,i] = numer/denom
             #if talk==True: print "S_eg was recomputed"
             if mode == 'debug':
-                return S_e, count
+                return S_moment_e, count
             else:
-                return S_e
+                return S_moment_e
 
         def recompute_F_eg(e, phi, coarse_phi):
             F_e = np.zeros((G,I)); count=0
@@ -459,7 +458,7 @@ def power_iterations(mesh, eigenvalue, discretization, mode='normal', L_max=9, S
                     for e in range(E):
                         for g in mapping[e]: 
                             for ep in range(E):
-                                sum_over_moment[g] += S_eg[e,g,moment,i]*coarse_p[moment][ep,e]*coarse_phi[ep,moment,i]
+                                sum_over_moment[g] += S_eg[moment,e,g,i]*coarse_p[moment][ep,e]*coarse_phi[ep,moment,i]
                                 count += 1
                             for m in range(N):
                                 CS[g,m,i] += (2.*moment+1.)/2.*mesh.legendre[moment,m]*sum_over_moment[g]
@@ -495,14 +494,16 @@ def power_iterations(mesh, eigenvalue, discretization, mode='normal', L_max=9, S
     if discretization == 'cs':
         c_phi_new = coarse(phi_new)
         mapping = mesh.mapping
-        S_eg_new = np.zeros((E,G,L,I))
+        S_eg_new = np.zeros((L,E,G,I))
         F_eg_new = np.zeros((E,G,I))
         for e in range(E):
             if mode == 'debug':
-                S_eg_new[e], S_eg_count = recompute_S_eg(e, phi_new, c_phi_new);      S_eg_tot_count = S_eg_count
+                for moment in range(L):
+                    S_eg_new[moment, e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new);      S_eg_tot_count = S_eg_count
                 F_eg_new[e], F_eg_count = recompute_F_eg(e, phi_new, c_phi_new);      F_eg_tot_count = F_eg_count 
             else:      
-                S_eg_new[e] = recompute_S_eg(e, phi_new, c_phi_new)
+                for moment in range(L):
+                    S_eg_new[moment, e] = recompute_S_eg(moment, e, phi_new, c_phi_new)
                 F_eg_new[e] = recompute_F_eg(e, phi_new, c_phi_new)
         phi_ratio_at_prev_S_eg=np.zeros(G)
         phi_ratio_at_prev_F_eg=np.zeros(G)
@@ -584,13 +585,15 @@ def power_iterations(mesh, eigenvalue, discretization, mode='normal', L_max=9, S
                             update_F_eg = True   
                     
                     if mode == 'debug':
-                        if update_S_eg == True:
-                            S_eg_new[e], S_eg_count = recompute_S_eg(e, phi_new, c_phi_new);      S_eg_tot_count += S_eg_count
+                        for moment in range(L):
+                            if update_S_eg == True:
+                                S_eg_new[moment,e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new);      S_eg_tot_count += S_eg_count
                         if update_F_eg == True:
                             F_eg_new[e], F_eg_count = recompute_F_eg(e, phi_new, c_phi_new);      F_eg_tot_count += F_eg_count 
                     else:      
-                        if update_S_eg == True:
-                            S_eg_new[e] = recompute_S_eg(e, phi_new, c_phi_new)
+                        for moment in range(L):
+                            if update_S_eg == True:
+                                S_eg_new[moment,e] = recompute_S_eg(moment, e, phi_new, c_phi_new)
                         if update_F_eg == True:
                             F_eg_new[e] = recompute_F_eg(e, phi_new, c_phi_new)
 
