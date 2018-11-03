@@ -25,7 +25,7 @@ mesh.print_space(v=2)
 #plt.plot(mesh.x_mids, phi[15,0,:])
 #plt.show()
 
-k, phi, psi, runtime, iter_dict = SN.power_iterations(mesh, 'k', 'cs', mode='debug', L_max=6, tol=1e-5, max_its=1000)
+k, phi, psi, runtime, iter_dict = SN.power_iterations(mesh, 'k', 'cs', mode='debug', L_max=8, tol=1e-5, max_its=1000)
 print runtime
 
 forward_flux = np.zeros((mesh.num_grps,mesh.num_cells))

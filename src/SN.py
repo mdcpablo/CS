@@ -429,26 +429,6 @@ def power_iterations(mesh, eigenvalue, discretization, mode='normal', L_max=9, S
             else:
                 return F_e
 
-        '''
-        def S(phi):
-            S = np.zeros((G,N,I)); count=0
-            for i in range(I):
-                p = mesh.mat_p[mesh.cell_mat[i]]
-                for moment in range(L):
-                    sum_over_moment = np.zeros(G)
-                    for g in range(G):
-                        for gp in range(G):
-                            sum_over_moment[g] += p[moment][gp,g]*phi[gp,moment,i]
-                            count += 1
-                        for m in range(N):
-                            S[g,m,i] += (2.*moment+1.)/2.*mesh.legendre[moment,m]*sum_over_moment[g]
-                            count += 1
-            if mode == 'debug':
-                return S, count
-            else:
-                return S
-        '''
-
         def CS(coarse_phi, S_eg):
             CS = np.zeros((G,N,I)); count=0
             for i in range(I):
@@ -534,7 +514,7 @@ def power_iterations(mesh, eigenvalue, discretization, mode='normal', L_max=9, S
                 phi_new   /= np.linalg.norm(phi_new)
                 phi_error = np.linalg.norm(phi_new - phi)
 
-                k_error   = abs(k_new - 1.1542032) #np.abs(k_new - k)/k 
+                k_error   = abs(k_new - 0.98144) #np.abs(k_new - k)/k 
 
                 if i > 1:
                     rho = np.linalg.norm( phi_new - phi ) / np.linalg.norm( phi - phi_old )
@@ -576,29 +556,56 @@ def power_iterations(mesh, eigenvalue, discretization, mode='normal', L_max=9, S
                     c_phi_new = coarse(phi_new);                      t_H = (time.time() - t0) - t_Q
  
                 for e in range(E):  
-                    update_S_eg = False  
-                    update_F_eg = False  
-                    for g in mapping[e]:
-                        if i%2==0:
-                            update_S_eg = True   
-                        if i%4==0:
-                            update_F_eg = True   
-                    
-                    if mode == 'debug':
-                        for moment in range(L):
-                            if update_S_eg == True:
-                                S_eg_new[moment,e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new);      S_eg_tot_count += S_eg_count
-                        if update_F_eg == True:
+                    if i%4==0:
+                        if mode == 'debug':
                             F_eg_new[e], F_eg_count = recompute_F_eg(e, phi_new, c_phi_new);      F_eg_tot_count += F_eg_count 
-                    else:      
-                        for moment in range(L):
-                            if update_S_eg == True:
-                                S_eg_new[moment,e] = recompute_S_eg(moment, e, phi_new, c_phi_new)
-                        if update_F_eg == True:
+                        else:      
                             F_eg_new[e] = recompute_F_eg(e, phi_new, c_phi_new)
 
+                #r = [1,2,3,4,5,6,7,8]
+                #r = [1,2,4,6,8,10,12,14] # 41.2
+                #r = [1,4,6,8,10,12,14,16] # 39.9
+                #r = [2,4,6,8,10,12,14,16] # 34.5
+                #r = [2,6,8,10,12,14,16,18] # 32.8
+                #r = [2,8,10,12,14,16,18,20] # 32.2
+                                
+                #r = [2,3,4,5,6,7,8,9] # 37.2
+                #r = [2,2,2,2,2,2,2,2] # 53.6
+                #r = [2,3,3,3,3,3,3,3] # 44.2
+                #r = [2,4,4,4,4,4,4,4] # 40.5
+                #r = [2,5,5,5,5,5,5,5] # 37.9
+                #r = [2,6,6,6,6,6,6,6] # 36.5        
+
+                #r = [2,4,4,4,4,4,4,10] # 39.7
+                #r = [2,4,4,4,4,4,4,20] # 40.0
+                
+                #r = [2,4,8,8,16,16,16,16] # 33.6   
+                #r = [2,4,16,16,16,16,16,16] # 32.4
+                #r = [2,8,16,16,16,16,16,16] # 31.9
+
+                #r = [2,32,32,32,32,32,32,32] # 35.2
+                #r = [2,16,16,16,32,32,32,32] # 30.5
+                #r = [2,16,16,16,16,32,32,32] # 30.8
+                #r = [2,16,16,32,32,32,32,32] # 27.7
+                #r = [2,16,32,32,32,32,32,32] # 28.2
+                #r = [2,8,16,32,32,32,32,32] # 30.6
+                #r = [2,16,16,32,32,32,32,64] # 30.0
+
+                #r = [2,16,16,32,32,32,32,32] # 27.7    
+                
+                # fastest!  
+                r = [1,16,16,32,32,32,32,32] # 27.7                                
+                
+                for moment in range(L):     
+                    for e in range(E):  
+                        if i%r[moment] == 0:
+                            if mode == 'debug':
+                                S_eg_new[moment,e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new);      S_eg_tot_count += S_eg_count
+                            else:      
+                                S_eg_new[moment,e] = recompute_S_eg(moment, e, phi_new, c_phi_new)
+                        
                 k_new   = k*np.linalg.norm(CF(c_phi_new,F_eg_new)[0])/np.linalg.norm(CF(c_phi,F_eg_new)[0]) 
-                k_error = abs(k_new - 1.1542032) #np.abs(k_new - k)/k 
+                k_error = abs(k_new - 0.98144) #np.abs(k_new - k)/k 
 
                 phi_new  /= np.linalg.norm(phi_new)
                 phi_error = np.linalg.norm(phi_new - phi)/np.linalg.norm(phi)
@@ -624,21 +631,6 @@ def power_iterations(mesh, eigenvalue, discretization, mode='normal', L_max=9, S
                     runtime = time.time()-t
                     print ("iter %3i  k = %.8e  k_error = %.1e  phi_error = %.1e  t_Q:t_H = %.1f:%.1f  tot_runtime = %.1f" 
                                                                                         %(i,k,k_error,phi_error,t_Q,t_H,runtime))
-            '''
-            elif discretization == "xcs":
-                Q = XCS(phi) + XCF(phi)/k
-                phi_new, psi_new = invH(Q)
-                               
-                k_new   = k*np.linalg.norm(F(phi_new)[0])/np.linalg.norm(F(phi)[0]) 
-                #k_new = k*inner_prod(phi_new, F(phi_new))/ inner_prod(phi_new, (H() - S(phi_new)))
-
-                phi_new   /= np.linalg.norm(phi_new)
-                phi_error = np.linalg.norm(phi_new - phi)
-
-                k_error   = np.abs(k_new - k) 
-
-                i += 1
-            '''
 
             if mode == 'debug':
                 if L_max > 1:

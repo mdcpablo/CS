@@ -227,8 +227,8 @@ Particle balance is maintained if following residual $\rho$ is less than machine
 \label{eq:scatter}
 \rho = \Big[ \sum_{g'}  \big( \Sigma_{s,0,g'\to g} + \Sigma_{f,g' \to g} \big)  \phi_{g'} \Big] - \\ \Big[ S_{0,e\to g} \sum_{e'} \Sigma_{s,0,e'\to e} \phi_{e'} + F_{e\to g} \sum_{e'}  \Sigma_{f,e' \to e} \phi_{e'} \Big] 
 \end{multline*}
-%Our current implementation of the coarse scattering method has reduced the simulation runtime for an infinite-medium eigenvalue calculation by a factor of 6, and reduced the runtime for a 1-D eigenvalue calculation by a factor of 2. The CS method converged to the same MG solution for these simulations. We will explore a few more avenues for achieving even greater reductions in runtime. For example, it may possible to only recompute small portions of $S_{\ell,e\to g}$ and $F_{e \to g}$ from one iteration to the next. Furthermore, it may be possible to design a criterion for when to recompute $S_{\ell,e\to g}$ and $F_{e \to g}$ in order to achieve greater reduction in runtime.
 
+%Our current implementation of the coarse scattering method has reduced the simulation runtime for an infinite-medium eigenvalue calculation by a factor of 6, and reduced the runtime for a 1-D eigenvalue calculation by a factor of 2. The CS method converged to the same MG solution for these simulations. We will explore a few more avenues for achieving even greater reductions in runtime. For example, it may possible to only recompute small portions of $S_{\ell,e\to g}$ and $F_{e \to g}$ from one iteration to the next. Furthermore, it may be possible to design a criterion for when to recompute $S_{\ell,e\to g}$ and $F_{e \to g}$ in order to achieve greater reduction in runtime.
 Futhermore, it may be possible to perserve particle balance every iteration if the CS method is only applied to Legendre moments greater than 0
 \end{frame}
 
