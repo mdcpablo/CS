@@ -10,13 +10,13 @@ import newGridXML2newGridObject
 #mat_dict = {'heu20': newGridXML2newGridObject.dict_to_object('xs/BarnfireXS_HEU20_30.xml', 92001)}
 mat_dict = {'hmf001': newGridXML2newGridObject.dict_to_object('newGrid_hmf001_cs_25.xml', 92235)}
 
-heu_1 = SN.ZoneSpatialMesh('hmf001', 0, 10, num_cells=8, log_option=False)
+heu_1 = SN.ZoneSpatialMesh('hmf001', 0, 10, num_cells=2, log_option=False)
 #heu20_1 = SN.ZoneSpatialMesh('heu20', 0, 25, num_cells=5, log_option=False)
 
-mesh = SN.GlobalMesh(mat_dict, [heu_1], 8, 25)
+mesh = SN.GlobalMesh(mat_dict, [heu_1], 2, 200)
 mesh.print_energies()
 mesh.print_angles()
-mesh.print_space(v=2)
+mesh.print_space(v=0)
 
 #bc = 0
 #Q_ext = np.zeros((mesh.num_grps,mesh.num_angles,mesh.num_cells))
@@ -25,7 +25,10 @@ mesh.print_space(v=2)
 #plt.plot(mesh.x_mids, phi[15,0,:])
 #plt.show()
 
-k, phi, psi, runtime, iter_dict = SN.power_iterations(mesh, 'k', 'cs', mode='debug', L_max=8, tol=1e-5, max_its=1000)
+#phi, psi, runtime, iter_dict = SN.power_iterations(mesh, 'source', 'mg', mode='debug', L_max=1, tol=1e-15, max_its=1000)
+phi, psi, runtime, iter_dict = SN.power_iterations(mesh, 'source', 'cs', mode='not debug', L_max=1, tol=1e-15, max_its=1000)
+
+#k, phi, psi, runtime, iter_dict = SN.power_iterations(mesh, 'k', 'cs', mode='debug', L_max=1, tol=1e-5, max_its=1000)
 print runtime
 
 forward_flux = np.zeros((mesh.num_grps,mesh.num_cells))
@@ -43,7 +46,7 @@ plt.loglog(mesh.emid, backward_flux[:,0], label='first-cell backward-spectrum')
 plt.loglog(mesh.emid, forward_flux[:,-1], label='last-cell forward-spectrum')
 plt.loglog(mesh.emid, backward_flux[:,-1], label='last-cell backward-spectrum')
 #plt.show()
-
+plt.close()
 
 forward_flux_3g = np.zeros((3,mesh.num_cells))
 backward_flux_3g = np.zeros((3,mesh.num_cells))
@@ -65,6 +68,7 @@ for g in range(mesh.num_grps):
                 elif mesh.emid[g] >= 0.1:
                     backward_flux_3g[0,i] += backward_flux[g,i]
 
+
 plt.plot(mesh.x_mids, forward_flux_3g[0,:], label='fast_flux_plus')
 plt.plot(mesh.x_mids, forward_flux_3g[1,:], label='epithermal_flux_plus')
 plt.plot(mesh.x_mids, forward_flux_3g[2,:], label='thermal_flux_plus')
@@ -74,8 +78,9 @@ plt.plot(mesh.x_mids, backward_flux_3g[2,:], label='thermal_flux_minus')
 plt.yscale('log')
 plt.legend()
 #plt.show()
+plt.close()
 
-'''
+flux_3g = np.zeros((3,mesh.num_cells))
 flux_3g[0] = forward_flux_3g[0] + backward_flux_3g[0]
 flux_3g[1] = forward_flux_3g[1] + backward_flux_3g[1]
 flux_3g[2] = forward_flux_3g[2] + backward_flux_3g[2]
@@ -83,7 +88,7 @@ tot_flux = sum(flux_3g)
 
 plt.plot(mesh.x_mids, tot_flux, 'k')
 plt.show()
-'''
+plt.close()
 
 spectrum = 0
 for i in range(mesh.num_cells):
@@ -91,5 +96,10 @@ for i in range(mesh.num_cells):
 
 plt.loglog(mesh.emid, spectrum, 'k')
 plt.show()
+plt.close()
+
+#plt.plot(mesh.x_mids, phi[0,0,:])
+#plt.show()
+
 
 

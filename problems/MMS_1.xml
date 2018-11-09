@@ -1,0 +1,74 @@
+<newGridXML projectile="n" code_used="newGrid">
+  <materialList>newGrid_hmf001</materialList>
+  <crossSectionMTList>1, 259, 455, 1054, 2055, 2518, 2519, 3518, 3519</crossSectionMTList>
+  <numGroups>1</numGroups>
+  <numCoarseElements>1</numCoarseElements>
+  <numMoments>1</numMoments>
+  <numDelayedNeutronFlavors  ardraParameter="num_precursors">6</numDelayedNeutronFlavors>
+  <temperature  unit="K">293.600000</temperature>
+  <grid  unit="MeV"  style="boundaries">
+    <values>
+14.2 0   </values>
+  </grid>
+  <energyMid  unit="MeV"  ardraParameter="emid">
+    <values>
+7.1   </values>
+  </energyMid>
+  <energydE  unit="MeV"  ardraParameter="de">
+    <values>
+14.2    </values>
+  </energydE>
+  <map>
+    <element_0>
+      0
+    </element_0>
+  </map>
+  <newGrid_hmf001>
+    <MT_1  unit="1/cm"  ardraParameter="sigt">
+1. </MT_1>
+    <MT_259  unit="s/m"  ardraParameter="invSpgrp">
+1e-8  </MT_259>
+    <MT_2518  unit="1/cm"  ardraParameter="sigf">
+        <fromGroup_0>
+          <toGroup_0>0.</toGroup_0>
+        </fromGroup_0>
+    </MT_2518>
+    <MT_2519  unit="1/cm"  ardraParameter="p">
+      <moment_0  ardraParameter="p0">
+        <fromGroup_0>
+          <toGroup_0>0.</toGroup_0>
+        </fromGroup_0>
+      </moment_0>
+    </MT_2519>
+    <MT_3518  unit="1/cm"  ardraParameter="coarse_sigf">
+        <fromElement_0>
+          <toElement_0>0.</toElement_0>
+        </fromElement_0>
+    </MT_3518>
+    <MT_3519  unit="1/cm"  ardraParameter="coarse_p">
+      <moment_0  ardraParameter="coarse_p0">
+        <fromElement_0>
+          <toElement_0>0.</toElement_0>
+        </fromElement_0>
+      </moment_0>
+    </MT_3519>
+    <MT_1054  ardraParameter="lambda">
+1.33493333333333e-02, 3.25856666666667e-02, 1.21690000000000e-01, 3.07226666666667e-01, 8.56363333333333e-01, 2.82460000000000e+00    </MT_1054>
+    <MT_2055  normalization="pdt" ardraParameter="chid">
+      <delayedNeutronFlavor_0>
+1  </delayedNeutronFlavor_0>
+      <delayedNeutronFlavor_1>
+1      </delayedNeutronFlavor_1>
+      <delayedNeutronFlavor_2>
+1      </delayedNeutronFlavor_2>
+      <delayedNeutronFlavor_3>
+1     </delayedNeutronFlavor_3>
+      <delayedNeutronFlavor_4>
+1    </delayedNeutronFlavor_4>
+      <delayedNeutronFlavor_5>
+1      </delayedNeutronFlavor_5>
+    </MT_2055>
+    <MT_455  normalization="pdt" ardraParameter="betafnubar">
+1   </MT_455>
+  </newGrid_hmf001>
+</newGridXML>

@@ -225,7 +225,7 @@ F_{e\to g}  = \frac{\sum_{g'} \Sigma_{f,g'\to g} \phi_{g'}}{ \sum_{e'} \Sigma_{f
 Particle balance is maintained if following residual $\rho$ is less than machine epsilon in the last iteration,
 \begin{multline*}
 \label{eq:scatter}
-\rho = \Big[ \sum_{g'}  \big( \Sigma_{s,0,g'\to g} + \Sigma_{f,g' \to g} \big)  \phi_{g'} \Big] - \\ \Big[ S_{0,e\to g} \sum_{e'} \Sigma_{s,0,e'\to e} \phi_{e'} + F_{e\to g} \sum_{e'}  \Sigma_{f,e' \to e} \phi_{e'} \Big] 
+\rho = \sum_{g}  \Big[ \sum_{g'}  \big( \Sigma_{s,0,g'\to g} + \Sigma_{f,g' \to g} \big)  \phi_{g'} \Big] - \\ \Big[ S_{0,e\to g} \sum_{e'} \Sigma_{s,0,e'\to e} \phi_{e'} + F_{e\to g} \sum_{e'}  \Sigma_{f,e' \to e} \phi_{e'} \Big] 
 \end{multline*}
 
 %Our current implementation of the coarse scattering method has reduced the simulation runtime for an infinite-medium eigenvalue calculation by a factor of 6, and reduced the runtime for a 1-D eigenvalue calculation by a factor of 2. The CS method converged to the same MG solution for these simulations. We will explore a few more avenues for achieving even greater reductions in runtime. For example, it may possible to only recompute small portions of $S_{\ell,e\to g}$ and $F_{e \to g}$ from one iteration to the next. Furthermore, it may be possible to design a criterion for when to recompute $S_{\ell,e\to g}$ and $F_{e \to g}$ in order to achieve greater reduction in runtime.
@@ -249,28 +249,28 @@ Futhermore, it may be possible to perserve particle balance every iteration if t
 \begin{frame}
   \frametitle{Properties of Spherical Harmonics}
 \begin{equation*}
-\int_{4\pi} d\Omega \, Y_\ell^m(\hat{\Omega}) Y_{\ell'}^{m'}(\hat{\Omega}) = \frac{4\pi}{2\ell + 1} \delta_{\ell \ell'} \delta_{m m'} 
+\int_{4\pi} d\Omega \, \frac{2\ell + 1}{4\pi} Y_\ell^m(\hat{\Omega}) Y_{\ell'}^{m'}(\hat{\Omega}) =  \delta_{\ell \ell'} \delta_{m m'} 
 \end{equation*}
 
 \begin{equation*}
-\int_{4\pi} d\Omega \, Y_\ell^m(\hat{\Omega}) Y_0^0(\hat{\Omega}) = 4\pi 
+\int_{4\pi} d\Omega \, \frac{2\ell + 1}{4\pi} Y_\ell^m(\hat{\Omega}) Y_0^0(\hat{\Omega}) = \delta_{\ell 0} \delta_{m 0} 
 \end{equation*}
 
 \begin{equation*}
-\int_{4\pi} d\Omega \, Y_\ell^m(\hat{\Omega}) = 4\pi 
+\int_{4\pi} d\Omega \, \sum_{\ell = 0}^L \sum_{m=-\ell}^{\ell} \frac{2\ell + 1}{4\pi}  Y_\ell^m(\hat{\Omega}) Y_0^0(\hat{\Omega}) = 1
 \end{equation*}
 
 \end{frame}
 
 \begin{frame}
-  \frametitle{Particle balanced is maintain if coarse scattering is only used for higher moments}
+  \frametitle{Particle balanced is maintained if coarse scattering is only used for higher moments}
 
 \begin{equation*}
-\int_{4\pi} d\Omega \, \sum_{\ell = 0}^L \sum_{m = -\ell}^{\ell} \frac{2\ell + 1}{4\pi} Y_\ell^m(\hat{\Omega}) \sum_{g'}^G \Sigma_{s,\ell,g' \to g} \phi_{\ell,g'}^m = \Sigma_{s,0,g' \to g} \phi_{0,g'}
+\int_{4\pi} d\Omega \, Y_0^0(\hat{\Omega}) \sum_{\ell = 0}^L \sum_{m = -\ell}^{\ell} \frac{2\ell + 1}{4\pi} Y_\ell^m(\hat{\Omega}) \sum_{g'}^G \Sigma_{s,\ell,g' \to g} \phi_{\ell,g'}^m = \Sigma_{s,0,g' \to g} \phi_{0,g'}
 \end{equation*}
 
 \begin{multline*}
-\int_{4\pi} d\Omega \, \Big\{ \sum_{g'}^G \Sigma_{s,0,g' \to g} \phi_{0,g'} \: + \\ \sum_{\ell = 1}^L \sum_{m = -\ell}^{\ell} \frac{2\ell + 1}{4\pi} Y_\ell^m(\hat{\Omega}) \sum_{e'}^E \Sigma_{s,\ell,e' \to e} \phi_{\ell,e'}^m \Big\} = \Sigma_{s,0,g' \to g} \phi_{0,g'}
+\int_{4\pi} d\Omega \, Y_0^0(\hat{\Omega}) \Big\{ \frac{1}{4\pi} Y_0^0(\hat{\Omega}) \sum_{g'}^G \Sigma_{s,0,g' \to g} \phi_{0,g'} \: + \\ \sum_{\ell = 1}^L \sum_{m = -\ell}^{\ell} \frac{2\ell + 1}{4\pi} Y_\ell^m(\hat{\Omega}) S_{e \to g} \sum_{e'}^E \Sigma_{s,\ell,e' \to e} \phi_{\ell,e'}^m \Big\} = \Sigma_{s,0,g' \to g} \phi_{0,g'}
 \end{multline*}
 
 \end{frame}
