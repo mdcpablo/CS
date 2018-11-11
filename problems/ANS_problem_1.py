@@ -10,26 +10,18 @@ import newGridXML2newGridObject
 #mat_dict = {'heu20': newGridXML2newGridObject.dict_to_object('xs/BarnfireXS_HEU20_30.xml', 92001)}
 mat_dict = {'hmf001': newGridXML2newGridObject.dict_to_object('newGrid_hmf001_cs_25.xml', 92235)}
 
-heu_1 = SN.ZoneSpatialMesh('hmf001', 0, 8, num_cells=100, log_option=False)
+heu_1 = SN.ZoneSpatialMesh('hmf001', 0, 8, num_cells=20, log_option=False)
 #heu20_1 = SN.ZoneSpatialMesh('heu20', 0, 25, num_cells=5, log_option=False)
 
-mesh = SN.GlobalMesh(mat_dict, [heu_1], 8, 20)
+mesh = SN.GlobalMesh(mat_dict, [heu_1], 8, 25)
 mesh.print_energies()
 mesh.print_angles()
 mesh.print_space(v=0)
 
-#bc = 0
-#Q_ext = np.zeros((mesh.num_grps,mesh.num_angles,mesh.num_cells))
-#phi = np.zeros((mesh.num_grps,mesh.nlgndr,mesh.num_cells))
-#phi = SN.one_source_iteration(mesh, bc, phi, Q_ext)
-#plt.plot(mesh.x_mids, phi[15,0,:])
-#plt.show()
-
-#phi, psi, runtime, iter_dict = SN.power_iterations(mesh, 'source', 'mg', mode='debug', L_max=1, tol=1e-15, max_its=1000)
-#phi, psi, runtime, iter_dict = SN.power_iterations(mesh, 'source', 'cs', mode='not debug', L_max=1, tol=1e-15, max_its=1000)
-
-k, phi, psi, runtime, iter_dict = SN.power_iterations(mesh, 'k', 'mg', mode='not debug', L_max=8, tol=1e-5, max_its=1000)
-print runtime
+#k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, 'k', 'mg', mode='not debug', L_max=1, tol=1e-5, max_its=1000)
+k, phi, psi, runtime_cs, iter_dict = SN.power_iterations(mesh, 'k', 'cs', mode='not debug', L_max=1, tol=1e-5, max_its=1000)
+#print runtime_mg
+print runtime_cs
 
 forward_flux = np.zeros((mesh.num_grps,mesh.num_cells))
 backward_flux = np.zeros((mesh.num_grps,mesh.num_cells))
@@ -100,6 +92,16 @@ plt.close()
 
 #plt.plot(mesh.x_mids, phi[0,0,:])
 #plt.show()
+
+plt.semilogy(np.arange(len(iter_dict)), [dic['residual'] for dic in iter_dict])
+plt.xlabel('iteration number')
+plt.ylabel('CS residual')
+plt.show()
+
+plt.semilogy(np.arange(len(iter_dict)), [dic['residual'] for dic in iter_dict])
+plt.xlabel('iteration number')
+plt.ylabel('$k$ error')
+plt.show()
 
 
 

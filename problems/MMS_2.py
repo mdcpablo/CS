@@ -12,7 +12,7 @@ import newGridXML2newGridObject
 mat_dict = {'hmf001': newGridXML2newGridObject.dict_to_object('MMS_2b.xml', 92235)}
 
 
-heu_1 = SN.ZoneSpatialMesh('hmf001', 0, 1, num_cells=100000, log_option=False)
+heu_1 = SN.ZoneSpatialMesh('hmf001', 0, 1, num_cells=1000, log_option=False)
 #heu20_1 = SN.ZoneSpatialMesh('heu20', 0, 25, num_cells=5, log_option=False)
 
 mesh = SN.GlobalMesh(mat_dict, [heu_1], 8, 1)

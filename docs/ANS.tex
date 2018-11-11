@@ -128,7 +128,7 @@ centered, draw=black, fill=Gray!,text=white]
   % This will typeset only the frames (or slides) that have the given label ("current" in this case).
 
 \title{The Coarse Scattering Method}
-    \author{{\Large Pablo A. Vaquer} \vspace{-0.75cm}}
+    %\author{{\Large Pablo A. Vaquer} \vspace{-0.75cm}}
     \date{{22 October 2018}}
 \subject{}
 
@@ -156,9 +156,9 @@ where each fine-group $g$ is a subset of a coarse-element $e$ and
 \label{Eq.S}
 S_{\ell,e\to g}  = \frac{\sum_{g'} \Sigma_{s,\ell,g'\to g} \phi_{\ell,g'}}{ \sum_{e'} \Sigma_{s,\ell,e'\to e} \phi_{\ell,e'}} 
 \end{equation*}
-\begin{equation*}
-\Sigma_{s,\ell,e'\to e} = \sum_{g \in e} \sum_{g' \in e'} \Sigma_{s,\ell,g'\to g} 
-\end{equation*}
+%\begin{equation*}
+%\Sigma_{s,\ell,e'\to e} = \sum_{g \in e} \sum_{g' \in e'} \Sigma_{s,\ell,g'\to g} 
+%\end{equation*}
 \begin{equation*}
 \phi_{\ell,e} = \sum_{g \in e} \phi_{\ell,g} 
 \end{equation*}
@@ -179,9 +179,9 @@ where
 \label{Eq.S}
 F_{e\to g}  = \frac{\sum_{g'} \Sigma_{f,g'\to g} \phi_{g'}}{ \sum_{e'} \Sigma_{f,e'\to e} \phi_{e'}} 
 \end{equation*}
-\begin{equation*}
-\Sigma_{f,e'\to e} = \sum_{g \in e} \sum_{g' \in e'} \Sigma_{f,g'\to g}
-\end{equation*}
+%\begin{equation*}
+%\Sigma_{f,e'\to e} = \sum_{g \in e} \sum_{g' \in e'} \Sigma_{f,g'\to g}
+%\end{equation*}
 \begin{equation*}
 \phi_{e} = \sum_{g \in e} \phi_{g} 
 \end{equation*}
@@ -246,24 +246,31 @@ Futhermore, it may be possible to perserve particle balance every iteration if t
     \end{table}
 \end{frame}
 
+
 \begin{frame}
-  \frametitle{Properties of Spherical Harmonics}
+  \frametitle{Future Work: Properties of Spherical Harmonics}
+
+\begin{figure}[ht]
+  \centering
+\includegraphics[width=.6\textwidth]{./graphics/Spherical_Harmonics.png}
+\end{figure}
+
 \begin{equation*}
 \int_{4\pi} d\Omega \, \frac{2\ell + 1}{4\pi} Y_\ell^m(\hat{\Omega}) Y_{\ell'}^{m'}(\hat{\Omega}) =  \delta_{\ell \ell'} \delta_{m m'} 
 \end{equation*}
 
-\begin{equation*}
-\int_{4\pi} d\Omega \, \frac{2\ell + 1}{4\pi} Y_\ell^m(\hat{\Omega}) Y_0^0(\hat{\Omega}) = \delta_{\ell 0} \delta_{m 0} 
-\end{equation*}
+%\begin{equation*}
+%\int_{4\pi} d\Omega \, \frac{2\ell + 1}{4\pi} Y_\ell^m(\hat{\Omega}) Y_0^0(\hat{\Omega}) = \delta_{\ell 0} \delta_{m 0} 
+%\end{equation*}
 
 \begin{equation*}
-\int_{4\pi} d\Omega \, \sum_{\ell = 0}^L \sum_{m=-\ell}^{\ell} \frac{2\ell + 1}{4\pi}  Y_\ell^m(\hat{\Omega}) Y_0^0(\hat{\Omega}) = 1
+\int_{4\pi} d\Omega \, \sum_{\ell = 0}^L \sum_{m=-\ell}^{\ell} \frac{2\ell + 1}{4\pi}  Y_\ell^m(\hat{\Omega}) \textcolor{blue}{Y_0^0(\hat{\Omega})} = 1
 \end{equation*}
 
 \end{frame}
 
 \begin{frame}
-  \frametitle{Particle balanced is maintained if coarse scattering is only used for higher moments}
+  \frametitle{Future Work: Particle balanced may be maintained if coarse scattering is only used for higher moments}
 
 \begin{equation*}
 \int_{4\pi} d\Omega \, Y_0^0(\hat{\Omega}) \sum_{\ell = 0}^L \sum_{m = -\ell}^{\ell} \frac{2\ell + 1}{4\pi} Y_\ell^m(\hat{\Omega}) \sum_{g'}^G \Sigma_{s,\ell,g' \to g} \phi_{\ell,g'}^m = \Sigma_{s,0,g' \to g} \phi_{0,g'}
