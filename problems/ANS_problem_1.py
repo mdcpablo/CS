@@ -18,9 +18,9 @@ mesh.print_energies()
 mesh.print_angles()
 mesh.print_space(v=0)
 
-#k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, 'k', 'mg', mode='not debug', L_max=1, tol=1e-5, max_its=1000)
-k, phi, psi, runtime_cs, iter_dict = SN.power_iterations(mesh, 'k', 'cs', mode='not debug', L_max=1, tol=1e-5, max_its=1000)
-#print runtime_mg
+k, phi, psi, runtime_mg, mg_iter_dict = SN.power_iterations(mesh, 'k', 'mg', mode='not debug', L_max=1, tol=1e-5, max_its=1000, k_exact=1.18173305)
+k, phi, psi, runtime_cs, cs_iter_dict = SN.power_iterations(mesh, 'k', 'cs', mode='not debug', L_max=1, tol=1e-5, max_its=1000, k_exact=1.18173305, recomp_F=8, recomp_S=[2,16,16,32,32,32,32,32])
+print runtime_mg
 print runtime_cs
 
 forward_flux = np.zeros((mesh.num_grps,mesh.num_cells))
@@ -93,15 +93,29 @@ plt.close()
 #plt.plot(mesh.x_mids, phi[0,0,:])
 #plt.show()
 
-plt.semilogy(np.arange(len(iter_dict)), [dic['residual'] for dic in iter_dict])
-plt.xlabel('iteration number')
-plt.ylabel('CS residual')
+fig = plt.figure()
+fig.patch.set_facecolor('white')
+plt.semilogy(np.arange(len(mg_iter_dict)), [abs(dic['phi_error']) for dic in mg_iter_dict], label='MG')
+plt.semilogy(np.arange(len(cs_iter_dict)), [abs(dic['phi_error']) for dic in cs_iter_dict], label='CS')
+plt.xlabel('iteration number', fontsize=20)
+plt.ylabel('$\phi$ error', fontsize=20)
+plt.legend()
 plt.show()
 
-plt.semilogy(np.arange(len(iter_dict)), [dic['residual'] for dic in iter_dict])
-plt.xlabel('iteration number')
-plt.ylabel('$k$ error')
+fig = plt.figure()
+fig.patch.set_facecolor('white')
+plt.semilogy(np.arange(len(mg_iter_dict)), [abs(dic['k_error']) for dic in mg_iter_dict], label='MG')
+plt.semilogy(np.arange(len(cs_iter_dict)), [abs(dic['k_error']) for dic in cs_iter_dict], label='CS')
+plt.xlabel('iteration number', fontsize=20)
+plt.ylabel('$k$ error', fontsize=20)
+plt.legend()
 plt.show()
 
+fig = plt.figure()
+fig.patch.set_facecolor('white')
+plt.semilogy(np.arange(len(cs_iter_dict)), [abs(dic['residual']) for dic in cs_iter_dict])
+plt.xlabel('iteration number', fontsize=20)
+plt.ylabel('CS residual', fontsize=20)
+plt.show()
 
 

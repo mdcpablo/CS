@@ -189,7 +189,7 @@ class BoundaryCondition:
         if right == 'mu1':
             self.psi_right[:,0] = (1. + mu[0])/(-mu[0] + mu[1]) * psi_right_mu1 / w[0] 
 ###############################################################################     
-def power_iterations(mesh, problem_type, discretization, mode='normal', L_max=9, S_tol=1e-6, F_tol=1e-6, max_its=1e3, tol=1e-6, talk=True):
+def power_iterations(mesh, problem_type, discretization, mode='normal', L_max=9, S_tol=1e-6, F_tol=1e-6, max_its=1e3, tol=1e-6, talk=True, k_exact=None, recomp_F=1, recomp_S=[1,1,1,1,1,1,1,1,1]):
     G, N, I = mesh.num_grps, mesh.num_angles, mesh.num_cells
     L = min(mesh.nlgndr, L_max)
 
@@ -547,14 +547,10 @@ def power_iterations(mesh, problem_type, discretization, mode='normal', L_max=9,
                 Q = CS_phi + Q_ext;                               t_Q = time.time() - t0
                 phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q);              H_tot_count += H_count; 
                 c_phi_new = coarse(phi_new);                      t_H = (time.time() - t0) - t_Q
-
-                #r = [1,1,1,1,1,1,1,1]      
-                #r = [2,1,1,1,1,1,1,1]                  
-                r = [2]               
  
                 for moment in range(L):     
                     for e in range(E):  
-                        if i%r[moment] == 0:
+                        if iter%recomp[moment] == 0:
                             S_eg_new[moment,e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new);      S_eg_tot_count += S_eg_count
 
                 if mode=='debug':
@@ -624,7 +620,10 @@ def power_iterations(mesh, problem_type, discretization, mode='normal', L_max=9,
                 phi_new   /= np.linalg.norm(phi_new)
                 phi_error = np.linalg.norm(phi_new - phi)
 
-                k_error   = abs(k_new - 1.181733) #abs(k_new - 1.116774) #np.abs(k_new - k)/k 
+                if k_exact == None:
+		            k_error = np.abs(k_new - k)/k
+                else:
+                	k_error = abs(k_new - k_exact)/k_exact 
 
                 if iter > 1:
                     rho = np.linalg.norm( phi_new - phi ) / np.linalg.norm( phi - phi_old )
@@ -657,14 +656,12 @@ def power_iterations(mesh, problem_type, discretization, mode='normal', L_max=9,
                 c_phi_new = coarse(phi_new);                      t_H = (time.time() - t0) - t_Q
  
                 for e in range(E):  
-                    if iter%8==0:
+                    if iter%recomp_F==0:
                         F_eg_new[e], F_eg_count = recompute_F_eg(e, phi_new, c_phi_new);      F_eg_tot_count += F_eg_count 
-                
-                r = [2,16,16,32,32,32,32,32] 
                 
                 for moment in range(L):     
                     for e in range(E):  
-                        if iter%r[moment] == 0:
+                        if iter%recomp_S[moment] == 0:
                             S_eg_new[moment,e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new);      S_eg_tot_count += S_eg_count
 
                 if mode=='debug':
@@ -672,7 +669,10 @@ def power_iterations(mesh, problem_type, discretization, mode='normal', L_max=9,
                     print "residual = ", B
                         
                 k_new   = k*np.linalg.norm(CF(c_phi_new,F_eg_new)[0])/np.linalg.norm(CF(c_phi,F_eg_new)[0]) 
-                k_error = abs(k_new - 1.181733) #abs(k_new - 1.116774) #np.abs(k_new - k)/k 
+                if k_exact == None:
+		            k_error = np.abs(k_new - k)/k
+                else:
+                	k_error = abs(k_new - k_exact)/k_exact 
 
                 phi_new  /= np.linalg.norm(phi_new)
                 phi_error = np.linalg.norm(phi_new - phi)/np.linalg.norm(phi)

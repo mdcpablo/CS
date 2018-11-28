@@ -18,10 +18,10 @@ mesh.print_energies()
 mesh.print_angles()
 mesh.print_space(v=0)
 
-k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, 'k', 'mg', mode='not debug', L_max=1, tol=1e-5, max_its=1000)
-#k, phi, psi, runtime_cs, iter_dict = SN.power_iterations(mesh, 'k', 'cs', mode='not debug', L_max=1, tol=1e-5, max_its=1000)
+k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, 'k', 'mg', mode='not debug', L_max=1, tol=1e-5, max_its=1000, k_exact=0.712766535)
+k, phi, psi, runtime_cs, iter_dict = SN.power_iterations(mesh, 'k', 'cs', mode='not debug', L_max=1, tol=1e-5, max_its=1000, k_exact=0.712766535, recomp_F=8, recomp_S=[2])
 print runtime_mg
-#print runtime_cs
+print runtime_cs
 
 forward_flux = np.zeros((mesh.num_grps,mesh.num_cells))
 backward_flux = np.zeros((mesh.num_grps,mesh.num_cells))
