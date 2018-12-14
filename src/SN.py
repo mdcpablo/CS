@@ -83,10 +83,12 @@ class GlobalMesh:
         self.num_angles = num_angles
         self.mu, self.w = leggauss(num_angles)
         self.legendre = np.zeros((self.nlgndr,self.num_angles))
+        self.legendre_and_normalization = np.zeros((self.nlgndr,self.num_angles))
         # precomputing legendre polynomial value for order ell for direction mu_m
         for moment in range(self.nlgndr):
             for m in range(self.num_angles):
                 self.legendre[moment,m] = special.legendre(moment)(self.mu[m]) 
+                self.legendre_and_normalization[moment,m] = (2.*moment+1.)/2.*self.legendre[moment,m]
 
         self.mat_sigt = {}
         self.mat_sigf = {}
@@ -189,7 +191,7 @@ class BoundaryCondition:
         if right == 'mu1':
             self.psi_right[:,0] = (1. + mu[0])/(-mu[0] + mu[1]) * psi_right_mu1 / w[0] 
 ###############################################################################     
-def power_iterations(mesh, problem_type, discretization, mode='normal', L_max=9, S_tol=1e-6, F_tol=1e-6, max_its=1e3, tol=1e-6, talk=True, k_exact=None, recomp_F=1, recomp_S=[1,1,1,1,1,1,1,1,1]):
+def power_iterations(mesh, problem_type, discretization, mode='normal', L_max=9, S_tol=1e-6, F_tol=1e-6, max_its=1e3, tol=1e-6, talk=True, k_exact=None, recomp_F=1, recomp_S=[1,1,1,1,1,1,1,1,1], DSA=True):
     G, N, I = mesh.num_grps, mesh.num_angles, mesh.num_cells
     L = min(mesh.nlgndr, L_max)
 
@@ -296,7 +298,7 @@ def power_iterations(mesh, problem_type, discretization, mode='normal', L_max=9,
                         sum_over_gp += p[moment][gp,g]*phi[gp,moment,i]
                         count += 1
                     for m in range(N):
-                        S[g,m,i] += (2.*moment+1.)/2.*mesh.legendre[moment,m]*sum_over_gp
+                        S[g,m,i] += mesh.legendre_and_normalization[moment,m]*sum_over_gp
                         count += 1
         return S, count
 
@@ -329,6 +331,8 @@ def power_iterations(mesh, problem_type, discretization, mode='normal', L_max=9,
             return coarse_phi
 
         def recompute_S_eg(moment, e, phi, coarse_phi):
+            #if e == 0:
+            #    print "Recomputing S_e->g for moment:  ", moment
             S_moment_e = np.zeros((G,I)); count=0
             for i in range(I):
                 p = mesh.mat_p[mesh.cell_mat[i]]
@@ -349,6 +353,8 @@ def power_iterations(mesh, problem_type, discretization, mode='normal', L_max=9,
             return S_moment_e, count
 
         def recompute_F_eg(e, phi, coarse_phi):
+            #if e == 0:
+            #    print "Recomputing F_e->g"
             F_e = np.zeros((G,I)); count=0
             for i in range(I):
                 sigf = mesh.mat_sigf[mesh.cell_mat[i]]
@@ -380,7 +386,7 @@ def power_iterations(mesh, problem_type, discretization, mode='normal', L_max=9,
                                 sum_over_ep += S_eg[moment,e,g,i]*coarse_p[moment][ep,e]*coarse_phi[ep,moment,i]
                                 count += 1  
                             for m in range(N):
-                                CS[g,m,i] += (2.*moment+1.)/2.*mesh.legendre[moment,m]*sum_over_ep
+                                CS[g,m,i] += mesh.legendre_and_normalization[moment,m]*sum_over_ep
                                 count += 1
             return CS, count
             

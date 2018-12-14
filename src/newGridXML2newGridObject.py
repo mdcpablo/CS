@@ -69,12 +69,14 @@ def dict_to_object(filePath, zaid):
 
     data.sigf = np.zeros((data.num_grps,data.num_grps))
     data.sigf_tot = np.zeros(data.num_grps)
-    for gp in range(data.num_grps):
-        for g in range(data.num_grps):
-            if 'toGroup_'+str(g) in xs_dict['newGridXML'][data.material]['MT_2518']['fromGroup_'+str(gp)]:
-                data.sigf[gp,g] = np.float(xs_dict['newGridXML'][data.material]['MT_2518']['fromGroup_'+str(gp)]['toGroup_'+str(g)])
-                data.sigf_tot[gp] += data.sigf[gp,g]
-    
+
+    if '2518' in data.crossSectionMTList:
+        for gp in range(data.num_grps):
+	        for g in range(data.num_grps):
+	            if 'toGroup_'+str(g) in xs_dict['newGridXML'][data.material]['MT_2518']['fromGroup_'+str(gp)]:
+	                data.sigf[gp,g] = np.float(xs_dict['newGridXML'][data.material]['MT_2518']['fromGroup_'+str(gp)]['toGroup_'+str(g)])
+	                data.sigf_tot[gp] += data.sigf[gp,g]
+        
     if '3519' in data.crossSectionMTList:
         data.numCoarseElements = int(xs_dict['newGridXML']['numCoarseElements'])
         data.coarse_p = []
@@ -99,23 +101,24 @@ def dict_to_object(filePath, zaid):
         for e in range(data.numCoarseElements):
             data.mapping.append(string_to_array(xs_dict['newGridXML']['map']['element_'+str(e)],dtype=int))
             
-
-    data.pdt_chid = np.zeros((data.num_precursors,data.num_grps))
-    for d in range(data.num_precursors):
-        for g in range(data.num_grps):
-                data.pdt_chid[d,:] = string_to_array(xs_dict['newGridXML'][data.material]['MT_2055']['delayedNeutronFlavor_'+str(d)])
-
-    data.decay_const =  string_to_array(xs_dict['newGridXML'][data.material]['MT_1054'])
-
-    data.pdt_beta_fnubar = string_to_array(xs_dict['newGridXML'][data.material]['MT_455'])
-    pdt_beta_fnubar = np.prod([data.pdt_beta_fnubar, data.sigf_tot], axis=0)
-
-    if len(data.decay_const) != 0:
-        data.chid = np.zeros((data.num_precursors, data.num_ngrps))
-        data.beta_fnubar = np.zeros((data.num_precursors, data.num_ngrps))
+    if '2518' in data.crossSectionMTList:
+        data.pdt_chid = np.zeros((data.num_precursors,data.num_grps))
         for d in range(data.num_precursors):
-            data.chid[d] = data.pdt_chid[d]/np.sum(data.pdt_chid[d])
-            data.beta_fnubar[d] = pdt_beta_fnubar * np.sum(data.pdt_chid[d])
+            for g in range(data.num_grps):
+                    data.pdt_chid[d,:] = string_to_array(xs_dict['newGridXML'][data.material]['MT_2055']['delayedNeutronFlavor_'+str(d)])
+
+    if '2518' in data.crossSectionMTList:
+        data.decay_const =  string_to_array(xs_dict['newGridXML'][data.material]['MT_1054'])
+
+        data.pdt_beta_fnubar = string_to_array(xs_dict['newGridXML'][data.material]['MT_455'])
+        pdt_beta_fnubar = np.prod([data.pdt_beta_fnubar, data.sigf_tot], axis=0)
+
+        if len(data.decay_const) != 0:
+            data.chid = np.zeros((data.num_precursors, data.num_ngrps))
+            data.beta_fnubar = np.zeros((data.num_precursors, data.num_ngrps))
+            for d in range(data.num_precursors):
+                data.chid[d] = data.pdt_chid[d]/np.sum(data.pdt_chid[d])
+                data.beta_fnubar[d] = pdt_beta_fnubar * np.sum(data.pdt_chid[d])
         
     data.invSpgrp = string_to_array(xs_dict['newGridXML'][data.material]['MT_259'])
     data.spgrp =  np.reciprocal(data.invSpgrp)
