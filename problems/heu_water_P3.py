@@ -9,7 +9,7 @@ import newGridXML2newGridObject
 mg_runtimes = []
 cs_runtimes = []
 
-dofs = [500]#[10, 25, 50, 100, 250, 500, 1000]
+dofs = [10]#[10, 25, 50, 100, 250, 500, 1000]
 
 for G in dofs:
     mat_dict = {'hmf001': newGridXML2newGridObject.dict_to_object('hmf001_'+str(G)+'mg.xml', 92001), 
@@ -90,7 +90,7 @@ plt.loglog(dofs, cs_runtimes, 'ro')
 plt.xlabel('Number of Energy Groups')
 plt.ylabel('Simulation Runtime')
 plt.xlim([5, 2000])
-plt.ylim([0.005, 10000])
+plt.ylim([0.005, 12000])
 plt.show()
 
 plt.semilogy(np.arange(len(iter_dict)), [dic['residual'] for dic in iter_dict])

@@ -42,6 +42,7 @@ def dict_to_object(filePath, zaid):
     xs_dict = xml_file_to_dict(filePath)
     #print xs_dict.tags()
     data = Data(zaid)
+    data.file = filePath.split('/')[-1]
     data.material = str(xs_dict['newGridXML']['materialList']).replace(' ','')
     data.crossSectionMTList = str(xs_dict['newGridXML']['crossSectionMTList'])
     data.num_ngrps = int(xs_dict['newGridXML']['numGroups'])
@@ -59,6 +60,9 @@ def dict_to_object(filePath, zaid):
     data.de =  string_to_array(xs_dict['newGridXML']['energydE']['values'])
 
     data.sigt =  string_to_array(xs_dict['newGridXML'][data.material]['MT_1'])
+    if 'MT_18' in xs_dict['newGridXML'][data.material].keys():
+        data.sigf_MT18 = string_to_array(xs_dict['newGridXML'][data.material]['MT_18'])
+    
     data.p = []
     for moment in range(data.nlgndr):
         data.p.append(np.zeros((data.num_grps,data.num_grps)))
@@ -105,7 +109,7 @@ def dict_to_object(filePath, zaid):
         data.pdt_chid = np.zeros((data.num_precursors,data.num_grps))
         for d in range(data.num_precursors):
             for g in range(data.num_grps):
-                    data.pdt_chid[d,:] = string_to_array(xs_dict['newGridXML'][data.material]['MT_2055']['delayedNeutronFlavor_'+str(d)])
+                data.pdt_chid[d,:] = string_to_array(xs_dict['newGridXML'][data.material]['MT_2055']['delayedNeutronFlavor_'+str(d)])
 
     if '2518' in data.crossSectionMTList:
         data.decay_const =  string_to_array(xs_dict['newGridXML'][data.material]['MT_1054'])

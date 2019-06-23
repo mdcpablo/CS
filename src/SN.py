@@ -1,6 +1,7 @@
 import numpy as np
 import time
 from scipy import interpolate, special
+import scipy.sparse.linalg as linalg
 from numpy.polynomial.legendre import leggauss
 ###############################################################################
 # obtain fission spectrum for U-235, E must be in (MeV) 
@@ -25,6 +26,7 @@ class ZoneSpatialMesh:
         self.dx = self.x_edges[1:] - self.x_edges[:-1]
 
     def update_discretization(self, N, option):
+        self.num_cells = N
         if self.log_option == True:
             self.x_edges = np.logspace(np.log10(self.x_lower_bound), np.log10(self.x_upper_bound), num=self.num_cells+1)
         else:
@@ -128,6 +130,24 @@ class GlobalMesh:
                         self.mat_coarse_p[mat][moment][cgp,cg] += self.mat_p[mat][moment][gp,g]  
                         #print moment, cgp, cg, gp, g, sub_g 
 
+        self.mat_sigs = {}
+        self.mat_D = {}
+        self.mat_siga = {}
+        for mat in sorted(mat_dict.keys()):
+            self.mat_sigs[mat] = np.zeros((self.nlgndr,self.num_grps))
+            for gp in range(self.num_grps):
+                for g in range(self.num_grps):
+                    for moment in range(self.nlgndr):
+                        self.mat_sigs[mat][moment][gp] += self.mat_p[mat][moment][gp,g]
+
+            self.mat_D[mat] = np.zeros(self.num_grps)
+            for gp in range(self.num_grps):
+                self.mat_D[mat][gp] = 1./(3.*(self.mat_sigt[mat][gp] - self.mat_sigs[mat][1][gp]))
+
+            self.mat_siga[mat] = np.zeros(self.num_grps)
+            for gp in range(self.num_grps):
+                self.mat_siga[mat][gp] = self.mat_sigt[mat][gp] - self.mat_sigs[mat][0][gp]
+         
         self.mapping = []
         prev_cg = -1
         for g in range(self.num_grps):
@@ -315,6 +335,38 @@ def power_iterations(mesh, problem_type, discretization, mode='normal', L_max=9,
                     F[g,m,i] += 0.5*sum_over_gp
                     count += 1
         return F, count
+
+    def DSA(phi, phi_old, k):    
+        phi_new = np.copy(phi)
+
+        for g in range(G):
+            A = np.matrix(np.zeros((I,I)))
+            b = np.matrix(np.zeros((I,1)))
+                
+            A[0,0] = 1.
+            A[I-1,I-1] = 1.
+            b[0,0] = 0.
+            b[I-1,0] = 0.
+
+            for i in range(1,I-1):
+                D = mesh.mat_D[mesh.cell_mat[i]][g]
+                siga = mesh.mat_siga[mesh.cell_mat[i]][g]
+                p = mesh.mat_p[mesh.cell_mat[i]] 
+                f = mesh.mat_sigf[mesh.cell_mat[i]]/k
+
+                A[i,i-1] = -D/(2.*mesh.dx[i])
+                A[i,i] = 2.*D/(2.*mesh.dx[i]) + siga
+                A[i,i+1] = -D/(2.*mesh.dx[i])              
+
+                for gp in range(G):
+                    b[i,0] += (p[0][gp,g]+f[gp,g])*(phi[gp,0,i] - phi_old[gp,0,i])
+
+            d_phi = linalg.gmres(A,b,tol=1e-14)[0]
+            
+            for i in range(I):
+                phi_new[g,0,i] += d_phi[i] 
+            
+        return phi_new
       
     if discretization == 'cs':
         mapping = mesh.mapping
@@ -622,6 +674,8 @@ def power_iterations(mesh, problem_type, discretization, mode='normal', L_max=9,
                 
                 k_new   = k*np.linalg.norm(F(phi_new)[0])/np.linalg.norm(F(phi)[0]) 
                 #k_new = k*inner_prod(phi_new, F(phi_new))/ inner_prod(phi_new, (H() - S(phi_new)))
+
+                phi_new = DSA(phi_new,phi,k_new)
 
                 phi_new   /= np.linalg.norm(phi_new)
                 phi_error = np.linalg.norm(phi_new - phi)

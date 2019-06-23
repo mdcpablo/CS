@@ -1,0 +1,20 @@
+prob1
+1 1 -0.00001 -1    imp:n=1 
+99 0          1    imp:n=0
+
+1 so 10
+
+mode n
+sdef pos=0 0 1 axs=1 0 0 ext=d1 par=n vec=0 0 -1 dir=d2 
+si1  0 2
+sp1 -21 0
+si2  0 1 
+sp2 -21 1
+f15:n 1 0 0  0.01
+fm15  3.1415926
+f25:n 2 0 0  0.01
+fm25  3.1415926
+m1 1001.70c 1. $hydrogen
+nps 1e6
+print
+
