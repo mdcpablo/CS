@@ -818,8 +818,7 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                 RHS_cost += S_tot_count + F_tot_count 
                 runtime = time.time()-t
                 FOM_RT= tot_figure_of_merit/runtime
-                print ("iter %3i  k = %.8e  k_error = %.1e  phi_error = %.1e  t_Q:t_H = %.1f:%.1f  tot_runtime = %.1f\n" 
-                                                                        %(iter,k,k_error,phi_error,t_Q,t_H,runtime) )
+                print ("iter %3i  k = %.8e  k_error = %.1e  phi_error = %.1e  t_Q:t_H = %.1f:%.1f  tot_runtime = %.1f\n" %(iter,k,k_error,phi_error,t_Q,t_H,runtime) )
                 print ("          tot_figure_of_merit = %.2e  RHS_cost = %.2e  H_count = %.2e  S_count = %.2e  F_count = %.2e\n\n" %(tot_figure_of_merit,RHS_cost, H_tot_count, S_tot_count, F_tot_count))
                                                                                         
             elif discretization == "cs":
@@ -827,43 +826,43 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
 
                 c_phi = np.copy(c_phi_new)                
                 S_eg  = np.copy(S_eg_new)  
-                F_eg  = np.copy(F_eg_new)               
+                F_eg  = np.copy(F_eg_new)    
 
                 CS_phi, CS_count = CS(c_phi,S_eg);                CS_tot_count += CS_count;
                 CF_phi, CF_count = CF(c_phi,F_eg);                CF_tot_count += CF_count;
                 Q = CS_phi + CF_phi/k;                            t_Q = time.time() - t0
-                phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q);              H_tot_count += H_count; 
+                phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q); H_tot_count += H_count; 
                 c_phi_new = coarse(phi_new);                      t_H = (time.time() - t0) - t_Q
  
                 for e in range(E):  
                     if iter%recomp_F==0:
-                        F_eg_new[e], F_eg_count = recompute_F_eg(e, phi_new, c_phi_new);      F_eg_tot_count += F_eg_count 
+                        F_eg_new[e], F_eg_count = recompute_F_eg(e, phi_new, c_phi_new); F_eg_tot_count += F_eg_count 
                 
                 for moment in range(L):     
                     for e in range(E):  
                         if iter%recomp_S[moment] == 0:
-                            S_eg_new[moment,e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new);      S_eg_tot_count += S_eg_count
+                            S_eg_new[moment,e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new); S_eg_tot_count += S_eg_count
 
                 if mode=='debug':
-                    #print tot_source(phi_new, Q)
-                    #print tot_rxn(phi_new)
-                    #print leak_left(psi_left_new)
-                    #print leak_right(psi_right_new)
-                    #balance = tot_source(phi_new, Q) - tot_rxn(phi_new) - leak_left(psi_left_new) - leak_right(psi_right_new)
-                    #print "balance = ", np.linalg.norm(balance)
+                    print tot_source(Q)
+                    print tot_rxn(phi_new)
+                    print leak_left(psi_left_new)
+                    print leak_right(psi_right_new)
+                    balance = tot_source(Q) - tot_rxn(phi_new) - leak_left(psi_left_new) - leak_right(psi_right_new)
+                    print "balance = ", balance
 
                     B = residual(phi_new, c_phi_new, S_eg_new, F_eg=F_eg_new) 
                     print "residual = ", B
-                    
                         
                 k_new   = k*np.linalg.norm(CF(c_phi_new,F_eg_new)[0])/np.linalg.norm(CF(c_phi,F_eg_new)[0]) 
                 if k_exact == None:
 		            k_error = np.abs(k_new - k)/k
                 else:
-                	k_error = abs(k_new - k_exact)/k_exact 
+                	k_error = abs(k_new - k_exact)/k_exact
 
                 phi_new  /= np.linalg.norm(phi_new)
                 phi_error = np.linalg.norm(phi_new - phi)/np.linalg.norm(phi)
+                c_phi_new = coarse(phi_new)
 
                 if iter > 1:
                     rho = np.linalg.norm( phi_new - phi ) / np.linalg.norm( phi - phi_old )
