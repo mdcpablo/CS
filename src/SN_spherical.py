@@ -310,9 +310,20 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                     for i in range(I):
                         invV[g,m,i] = mesh.invSpgrp[g,i]
             return invV
-        
 
-    def invH(Q, t_abs=0.):
+    def invH_slab(Q, t_abs=0.):
+        # sweeps across all cells for all energies and directions
+        psi = np.zeros((G,N,I)); psi_left = np.zeros((G,N,I)); psi_right = np.zeros((G,N,I)); count=0
+        sigt = mesh.sigt + t_abs # adding time absorption
+        for g in range(G):
+            for m in range(N):
+                psi_L = 0.
+                psi_R = 0.
+                psi[g,m,:], psi_left[g,m,:], psi_right[g,m,:] = sweep_diamond(I, mesh.dx, mesh.mu[m], mesh.sigt[g,:], Q[g,m,:], psi_L, psi_R)
+                count += I #15*I
+        return take_moments(psi), psi, psi_left, psi_right, count
+
+    def invH_sphere(Q, t_abs=0.):
         # sweeps across all cells for all energies and directions
         psi = np.zeros((G,N,I)); psi_left = np.zeros((G,N,I)); psi_right = np.zeros((G,N,I));
         psi_hat_down = np.zeros((G,N,I)); psi_hat_up = np.zeros((G,N,I)); count=0
@@ -332,7 +343,7 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
 
         return take_moments(psi), psi, psi_left, psi_right, count
 
-    def invH_inf(Q, t_abs=0):
+    def invH_inf(Q, t_abs=0.):
         # infinite-medium Boltzmann operator (no streaming)
         sigt = mesh.sigt + t_abs # adding time absorption
         psi = np.zeros((G,N,I)); count=0
@@ -341,6 +352,16 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                 psi[g,m,:] += Q[g,m,:]/sigt[g,:]
                 count += 1
         return take_moments(psi), psi, count  
+
+    def invH(Q, t_abs=0., geom='spherical'):
+        if geom == 'infinite':
+            return invH_inf(Q, t_abs=t_abs)
+        elif geom == 'slab':
+            return invH_slab(Q, t_abs=t_abs)
+        elif geom == 'sphere':
+            return invH_sphere(Q, t_abs=t_abs)
+        else:
+            print 'Error: geometry not recognized'
 
     def sweep_diamond_starting_direction(mesh, g, Q, psi_R):
         I = mesh.num_cells; dx = mesh.dx; sigt = mesh.sigt[g,:]        
