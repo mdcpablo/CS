@@ -3,7 +3,7 @@ sys.path.append('/home/pablo/CS/src')
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import SN as SN
+import SN 
 import newGridXML2newGridObject
 ###############################################################################
 mg_runtimes = []
@@ -17,7 +17,7 @@ mat_dict = {'hmf001': newGridXML2newGridObject.dict_to_object('hmf001_'+str(G)+'
 
 heu_1 = SN.ZoneSpatialMesh('hmf001', 0, 8, num_cells=20, log_option=False)
 
-mesh = SN.GlobalMesh(mat_dict, [heu_1], 32, CG)
+mesh = SN.GlobalMesh(mat_dict, [heu_1], 32, CG, 'slab')
 mesh.print_energies()
 mesh.print_angles()
 mesh.print_space(v=0)

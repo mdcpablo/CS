@@ -4,7 +4,7 @@ sys.path.append('/home/pablo/CS/src')
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import SN_spherical as SN
+import SN
 import newGridXML2newGridObject
 ###############################################################################
 def output_run_details(xs_file, mesh, L_max, comment, k):#, k, phi, psi, runtime_mg, iter_dict):
@@ -27,7 +27,7 @@ def run(xs_file, I=2, N=2, L_max=1, note=''):
 
     heu_1 = SN.ZoneSpatialMesh('hmf001', 0, 8.7407, num_cells=I, log_option=False)
 
-    mesh = SN.GlobalMesh(mat_dict, [heu_1], N, 1)
+    mesh = SN.GlobalMesh(mat_dict, [heu_1], N, 1, 'sphere')
     mesh.print_energies()
     mesh.print_angles()
     mesh.print_space(v=0)
@@ -36,7 +36,7 @@ def run(xs_file, I=2, N=2, L_max=1, note=''):
 
     k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, bc, 'k', 'mg', mode='normal', L_max=L_max, tol=1e-8, max_its=50, k_exact=k_exact, DSA_opt=False)
 
-    output_run_details(xs_file, mesh, L_max, 'MG', k)
+    #output_run_details(xs_file, mesh, L_max, 'MG', k)
 
     return k, phi, psi, runtime_mg, iter_dict
 # -----------------------------------------------------------------------------
@@ -59,7 +59,7 @@ Is = [100,250,500,1000]
 # 250 cells, P5, S128 
 # -----------------------------------------------------------------------------
 #dofs = [100,200,400,600,800]
-dofs = [800]
+dofs = [100]
 mg_k, mg_k_error = run_dofs('HMF001_',dofs,'mg.xml',I=250,N=128,L_max=5,note='MG')
 
 

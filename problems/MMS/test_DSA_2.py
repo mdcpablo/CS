@@ -3,7 +3,7 @@ sys.path.append('/home/pablo/CS/src')
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import SN as SN
+import SN 
 import newGridXML2newGridObject
 ###############################################################################
 mg_runtimes = []
@@ -39,7 +39,7 @@ elif G == 1000:
     CG = 5
     k_exact = 0.8594517
 
-mesh = SN.GlobalMesh(mat_dict, [heu_1, water], 32, CG)
+mesh = SN.GlobalMesh(mat_dict, [heu_1, water], 32, CG, 'slab')
 mesh.print_energies()
 mesh.print_angles()
 mesh.print_space(v=0)

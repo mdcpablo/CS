@@ -4,7 +4,7 @@ sys.path.append('/home/pablo/CS/src')
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import SN_spherical as SN
+import SN
 import newGridXML2newGridObject
 ###############################################################################
 def output_run_details(xs_file, mesh, L_max, comment, k):#, k, phi, psi, runtime_mg, iter_dict):
@@ -27,7 +27,7 @@ def run(xs_file, I=2, N=2, L_max=1, note=''):
 
     heu_1 = SN.ZoneSpatialMesh('hmf019', 0, 8.7407, num_cells=I, log_option=False)
 
-    mesh = SN.GlobalMesh(mat_dict, [heu_1], N, 1)
+    mesh = SN.GlobalMesh(mat_dict, [heu_1], N, 1, 'sphere')
     mesh.print_energies()
     mesh.print_angles()
     mesh.print_space(v=0)

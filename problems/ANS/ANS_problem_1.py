@@ -13,7 +13,7 @@ mat_dict = {'hmf001': newGridXML2newGridObject.dict_to_object('newGrid_hmf001_cs
 heu_1 = SN.ZoneSpatialMesh('hmf001', 0, 8, num_cells=20, log_option=False)
 #heu20_1 = SN.ZoneSpatialMesh('heu20', 0, 25, num_cells=5, log_option=False)
 
-mesh = SN.GlobalMesh(mat_dict, [heu_1], 8, 25)
+mesh = SN.GlobalMesh(mat_dict, [heu_1], 8, 25, 'slab')
 mesh.print_energies()
 mesh.print_angles()
 mesh.print_space(v=0)

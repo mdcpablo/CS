@@ -3,7 +3,7 @@ sys.path.append('/home/pablo/CS/src')
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import SN as SN
+import SN 
 import newGridXML2newGridObject
 ###############################################################################
 #mat_dict = {'heu20': newGridXML2newGridObject.dict_to_object('xs/CS_300_5.xml', 92001)}
@@ -15,7 +15,7 @@ mat_dict = {'hmf001': newGridXML2newGridObject.dict_to_object('MMS_2b.xml', 9223
 heu_1 = SN.ZoneSpatialMesh('hmf001', 0, 1, num_cells=1000, log_option=False)
 #heu20_1 = SN.ZoneSpatialMesh('heu20', 0, 25, num_cells=5, log_option=False)
 
-mesh = SN.GlobalMesh(mat_dict, [heu_1], 8, 1)
+mesh = SN.GlobalMesh(mat_dict, [heu_1], 8, 1, 'slab')
 mesh.print_energies()
 mesh.print_angles()
 mesh.print_space(v=0)
