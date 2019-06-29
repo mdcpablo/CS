@@ -50,24 +50,25 @@ mg_runtimes.append(runtime_mg)
 '''
 #'''
 k_exact = 1.
-G = 222
-CGs = [222]
+G = 100
+CGs = [100]
 
-mat_dict = {'hmf001': newGridXML2newGridObject.dict_to_object('FEDS_HMF001_'+str(G)+'.xml', 92001)}
+mat_dict = {'hmf001': newGridXML2newGridObject.dict_to_object('../HMF001/xs/HMF001_'+str(G)+'mg.xml', 92001)}
 
 #mat_dict = {'hmf001': newGridXML2newGridObject.dict_to_object('hmf001_'+str(G)+'mg.xml', 92001)}
 
 
 heu_1 = SN.ZoneSpatialMesh('hmf001', 0, 8.7407, num_cells=100, log_option=False)
 
-mesh = SN.GlobalMesh(mat_dict, [heu_1], 16, 1)
+#mesh = SN.GlobalMesh(mat_dict, [heu_1], 16, CGs[0])
+mesh = SN.GlobalMesh(mat_dict, [heu_1], 16, 5)
 mesh.print_energies()
 mesh.print_angles()
 mesh.print_space(v=0)
 
 bc = SN.BoundaryCondition(mesh, left='vacuum', right='vacuum')
 
-k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, bc, 'k', 'mg', mode='debug', L_max=3, tol=1e-5, max_its=40, k_exact=k_exact, DSA_opt=False)
+k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, bc, 'k', 'cs', mode='not debug', L_max=3, tol=1e-5, max_its=40, k_exact=k_exact, DSA_opt=False, recomp_F=4, recomp_S=[2,8,8,8])
 print runtime_mg
 mg_runtimes.append(runtime_mg)
 #'''
