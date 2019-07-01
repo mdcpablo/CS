@@ -143,10 +143,10 @@ class GlobalMesh:
             self.mat_sigf[mat] = mat_dict[mat].sigf
             self.mat_p[mat] = mat_dict[mat].p  
             self.mat_invSpgrp[mat] = mat_dict[mat].invSpgrp
-            self.mat_chid[mat] = mat_dict[mat].pdt_chid
-            self.mat_beta_fnubar[mat] = mat_dict[mat].pdt_beta_fnubar
             if '18' in mat_dict[mat].crossSectionMTList: 
                 self.mat_sigf_MT18[mat] = mat_dict[mat].sigf_MT18
+                self.mat_chid[mat] = mat_dict[mat].pdt_chid
+                self.mat_beta_fnubar[mat] = mat_dict[mat].pdt_beta_fnubar
             #else:
             #    self.mat_sigf_MT18[mat] = mat_dict[mat].sigf_tot
 

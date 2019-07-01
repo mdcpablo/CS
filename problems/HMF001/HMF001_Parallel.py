@@ -4,7 +4,7 @@ sys.path.append('/home/pablo/CS/src')
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import SN_spherical as SN
+import SN
 import newGridXML2newGridObject
 ###############################################################################
 def output_run_details(xs_file, mesh, L_max, comment):#, k, phi, psi, runtime_mg, iter_dict):
@@ -64,7 +64,7 @@ Is = [100,250,500,1000]
 # needed for accuracy:
 # 500 cells, P5, S128 
 # -----------------------------------------------------------------------------
-dofs = [100,200,400,600,800]
+dofs = [200,400,600,800]
 mg_k, mg_k_error = readfiles_dofs('HMF001_',dofs,'mg.xml',I=250,N=128,L_max=5,note='MG')
 oldfeds_k, oldfeds_k_error = readfiles_dofs('HMF001_',dofs,'oldfeds_5EperCG.xml',I=250,N=128,L_max=5,note='old FEDS (5 elements per coarse group)')
 newfeds_k, newfeds_k_error = readfiles_dofs('HMF001_',dofs,'newfeds.xml',I=250,N=128,L_max=5,note='new FEDS')
@@ -73,9 +73,14 @@ print mg_k
 print oldfeds_k
 print newfeds_k
 # -----------------------------------------------------------------------------
-plt.semilogx(dofs, mg_k, 'bo', label='MG')
-plt.semilogx(dofs, oldfeds_k, 'ro', label='old FEDS')
-plt.semilogx(dofs, newfeds_k, 'go', label='new FEDS')
+mg_marker = 'bs'
+oldfeds_marker = 'r^'
+newfeds_marker = 'g*'
+s = 10; alpha=0.6
+# -----------------------------------------------------------------------------
+plt.semilogx(dofs, mg_k, mg_marker, markersize=s, alpha=alpha, label='MG')
+plt.semilogx(dofs, oldfeds_k, oldfeds_marker, markersize=s, alpha=alpha, label='old FEDS')
+plt.semilogx(dofs, newfeds_k, newfeds_marker, markersize=1.5*s, alpha=alpha, label='new FEDS')
 plt.xlabel(r'Number of Energy Groups')
 plt.ylabel(r'$k$')
 plt.xlim([1,1000])
@@ -83,9 +88,9 @@ plt.ylim([0.8,1.2])
 plt.legend()
 plt.show()
 # -----------------------------------------------------------------------------
-plt.loglog(dofs, map(abs, mg_k_error), 'bo', label='MG')
-plt.loglog(dofs, map(abs, oldfeds_k_error), 'ro', label='old FEDS')
-plt.loglog(dofs, map(abs, newfeds_k_error), 'go', label='new FEDS')
+plt.loglog(dofs, map(abs, mg_k_error), mg_marker, markersize=s, alpha=alpha, label='MG')
+plt.loglog(dofs, map(abs, oldfeds_k_error), oldfeds_marker, markersize=s, alpha=alpha, label='old FEDS')
+plt.loglog(dofs, map(abs, newfeds_k_error), newfeds_marker, markersize=1.5*s, alpha=alpha, label='new FEDS')
 plt.xlabel(r'Number of Energy Groups')
 plt.ylabel(r'Error in $k$')
 plt.xlim([1,1000])
@@ -93,9 +98,9 @@ plt.ylim([1e-8,1])
 plt.legend()
 plt.show()
 # -----------------------------------------------------------------------------
-plt.plot(dofs, mg_k_error, 'bo', label='MG')
-plt.plot(dofs, oldfeds_k_error, 'ro', label='old FEDS')
-plt.plot(dofs, newfeds_k_error, 'go', label='new FEDS')
+plt.plot(dofs, mg_k_error, mg_marker, markersize=s, alpha=alpha, label='MG')
+plt.plot(dofs, oldfeds_k_error, oldfeds_marker, markersize=s, alpha=alpha, label='old FEDS')
+plt.plot(dofs, newfeds_k_error, newfeds_marker, markersize=1.5*s, alpha=alpha, label='new FEDS')
 plt.xscale('log')
 plt.yscale('symlog', linthreshy=1e-5)
 plt.xlabel(r'Number of Energy Groups')
