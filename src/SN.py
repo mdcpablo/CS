@@ -68,6 +68,7 @@ class GlobalMesh:
         self.x_edges = np.array(self.x_edges)
         self.x_mids = 0.5*(self.x_edges[1:] + self.x_edges[:-1])
         self.dx = self.x_edges[1:] - self.x_edges[:-1] 
+        self.V = np.copy(self.dx)
 
         self.mat_dict = mat_dict
         self.num_grps = mat_dict[mat_dict.keys()[0]].num_grps
@@ -92,7 +93,7 @@ class GlobalMesh:
             for m in range(self.num_angles):
                 self.legendre[moment,m] = special.legendre(moment)(self.mu[m]) 
                 self.legendre_and_normalization[moment,m] = (2.*moment+1.)/2.*self.legendre[moment,m]
-
+        
         # ----------------------------- for spherical code: ---------------------------------------
         if self.geom == "sphere":
             self.x_left = self.x_mids - 0.5*self.dx
@@ -740,8 +741,8 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                     #print "phi", phi_new
                     print tot_source(Q)
                     print tot_rxn(phi_new)
-                    print leak_left(psi_left_new)
                     print leak_right(psi_right_new)
+                    print leak_left(psi_left_new)
                     balance = tot_source(Q) - tot_rxn(phi_new) - leak_left(psi_left_new) - leak_right(psi_right_new)
                     print "balance = ", np.linalg.norm(balance) 
                 
@@ -828,6 +829,7 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
     elif problem_type == "k":
         print "\nCommencing Power iterations to calculate k:"
         k_new = 1.; k_error = 1.; tot_figure_of_merit=0; LHS_cost = 0; RHS_cost = 0;
+        V = mesh.V
         while (k_error > tol*(1-rho) or phi_error > tol*(1-rho)) and iter < max_its+1 or (iter-1)%4 != 0: 
             phi_old = np.copy(phi)                
             phi     = np.copy(phi_new)
@@ -849,7 +851,7 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                     balance = tot_source(Q) - tot_rxn(phi_new) - leak_left(psi_left_new) - leak_right(psi_right_new)
                     print "balance = ", balance
                 
-                k_new   = k*np.linalg.norm(F(phi_new)[0])/np.linalg.norm(F(phi)[0]) 
+                k_new   = k*np.linalg.norm(F(phi_new)[0]*V)/np.linalg.norm(F(phi)[0]*V) 
                 #k_new = k*inner_prod(phi_new, F(phi_new))/ inner_prod(phi_new, (H() - S(phi_new)))
 
                 if DSA_opt == True:
@@ -912,7 +914,7 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                     B = residual(phi_new, c_phi_new, S_eg_new, F_eg=F_eg_new) 
                     print "residual = ", B
                         
-                k_new   = k*np.linalg.norm(CF(c_phi_new,F_eg_new)[0])/np.linalg.norm(CF(c_phi,F_eg_new)[0]) 
+                k_new   = k*np.linalg.norm(CF(c_phi_new,F_eg_new)[0]*V)/np.linalg.norm(CF(c_phi,F_eg_new)[0]*V) 
                 if k_exact == None:
 		            k_error = np.abs(k_new - k)/k
                 else:
