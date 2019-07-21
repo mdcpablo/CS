@@ -336,6 +336,7 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
             psi_R[g] = 0.
             for m in range(N):
                 if m == 0:
+                    print np.shape(Q)
                     Q_start = Q[g,0,:]*(mu[1]+1.)/(mu[1]-mu[0]) - Q[g,1,:]*(1.+mu[0])/(mu[1]-mu[0])
                     psi_L[g], psi_hat_down[g,0,:] = sweep_starting_direction_diamond_difference(mesh, g, Q_start, psi_R[g])
                 else:
@@ -955,16 +956,15 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
         return k_new, phi_new, psi_new/np.linalg.norm(psi_new), runtime, iteration_dict
 
     elif problem_type == "alpha":
-        alpha = 0; d_alpha = 1.
-        while (abs(d_alpha) > tol*(1-rho) or phi_error > tol*(1-rho)) and i < max_its:  
+        alpha = 0; d_alpha = 1.; iter=0
+        while (abs(d_alpha) > tol*(1-rho) or phi_error > tol*(1-rho)) and iter < max_its:  
             phi_old = np.copy(phi)                
             phi     = phi_new / np.linalg.norm(phi_new)
 
             if discretization == "mg":
                 Q = S(phi) + F(phi);   t_Q = time.time() - t0
                 phi_new, psi_new, psi_left_new, psi_right_new = invH(Q, geom, t_abs=alpha*invV())
-                d_alpha = inner_prod(psi_new, S(phi_new)+F(phi_new)) / inner_prod(psi_new, invV(N)*psi_new) - \
-                          inner_prod(psi_new, S(phi)+F(phi)) / inner_prod(psi_new, invV(N)*psi_new)
+                d_alpha = inner_prod(psi_new, S(phi_new)+F(phi_new)) / inner_prod(psi_new, invV(N)*psi_new) - inner_prod(psi_new, S(phi)+F(phi)) / inner_prod(psi_new, invV(N)*psi_new)
                 alpha   += d_alpha 
 
             elif discretization == "cs":
@@ -980,9 +980,9 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                     update_S_eg = False  
                     update_F_eg = False  
                     for g in mapping[e]:
-                        if i%1==0:
+                        if iter%1==0:
                             update_S_eg = True   
-                        if i%1==0:
+                        if iter%1==0:
                             update_F_eg = True   
                     
                     if update_S_eg == True:
@@ -999,10 +999,11 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                 # for supercritical problems
                 alpha    = max(0, alpha)
 
+
             phi_new  /= np.linalg.norm(phi_new)
             phi_error = np.linalg.norm(phi_new - phi)/np.linalg.norm(phi)
 
-            i += 1
+            iter += 1
             if talk==True and i%1 == 0: print ("iteration %3i  alpha = %.10e  d_alpha = %.3e  phi_error = %.3e" %(i,alpha,d_alpha,phi_error) )
 
         runtime = time.time() - t
