@@ -61,7 +61,7 @@ Is = [100,250,500,1000]
 # -----------------------------------------------------------------------------
 dofs = [100]
 #dofs = [100]
-mg_k, mg_k_error = run_dofs('HMF001_',dofs,'mg.xml',I=50,N=2)#, I=5, N=4, L_max=1, note='MG')
+mg_k, mg_k_error = run_dofs('HMF001_',dofs,'mg.xml',I=20,N=8,L_max=3)#, I=5, N=4, L_max=1, note='MG')
 
 
 

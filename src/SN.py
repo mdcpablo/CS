@@ -982,7 +982,7 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
         min_alpha = -1e14
         for i in range(I):
             for g in range(G):
-                min_alpha = max(min_alpha,-invV()[g,i]/mesh.sigt[g,i])
+                min_alpha = max(min_alpha,-invV()[g,i]/mesh.sigt[g,i]*(1-1e-7))
                 print min_alpha             
 
         while (abs(d_alpha) > tol*(1-rho) or phi_error > tol*(1-rho)) and iter < max_its:  
@@ -1006,31 +1006,16 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                 phi_V, psi_V, psi_left_invV, psi_right_invV, H_count = invH(invV(N)*psi, geom, t_abs=0.);  H_tot_count += H_count;  t_H = (time.time() - t0) - t_Q
 
                 new_alpha = (inner_prod(psi, psi_Q) - inner_prod(psi, psi)) / inner_prod(psi, psi_V)
-
                 new_alpha = max(new_alpha, min_alpha)
-
                 d_alpha = new_alpha - alpha
-
-                alpha += d_alpha
-
-                #phi /= np.linalg.norm(phi)
-
-                S_phi, S_count = S(phi);                        S_tot_count += S_count; 
-                F_phi, F_count = F(phi);                        F_tot_count += F_count;
-
-                Q = S_phi + F_phi;                              t_Q = time.time() - t0
+                alpha = np.copy(new_alpha)
 
                 phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q, geom, t_abs=alpha*invV());  H_tot_count += H_count;  t_H = (time.time() - t0) - t_Q
 
-
-                #Q = -alpha*invV(N)*psi + S_phi + F_phi;         t_Q = time.time() - t0
-
-                #phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q, geom, t_abs=0.);  H_tot_count += H_count;  t_H = (time.time() - t0) - t_Q
-            
+                #Q = -alpha*invV(N)*psi + S_phi + F_phi;         
+                #phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q, geom, t_abs=0.); 
                 #phi_new = phi_Q - alpha*phi_V
                 #psi_new = psi_Q - alpha*psi_V
-
-                
 
                 if mode=='debug':
                     print tot_source(Q)
@@ -1039,15 +1024,6 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                     print leak_right(psi_right_new)
                     balance = tot_source(Q) - tot_rxn(phi_new) - leak_left(psi_left_new) - leak_right(psi_right_new)
                     print "balance = ", balance
-                
-                '''
-                if alpha > 0:
-                    d_alpha = inner_prod(psi_new, S(phi_new)[0]+F(phi_new)[0]) / inner_prod(psi_new, invV(N)*psi_new) - inner_prod(psi_new, S(phi)[0]+F(phi)[0]) / inner_prod(psi_new, invV(N)*psi_new)
-                    alpha += d_alpha
-                else:
-                    d_alpha = inner_prod(psi_new, S(phi_new)[0]+F(phi_new)[0]-alpha*invV(N)*psi_new) / inner_prod(psi_new, invV(N)*psi_new) - inner_prod(psi_new, S(phi)[0]+F(phi)[0]) / inner_prod(psi_new, invV(N)*psi_new) - alpha
-                    alpha += d_alpha 
-                '''
 
             elif discretization == "cs":
                 c_phi = np.copy(c_phi_new)                
@@ -1083,7 +1059,7 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
 
             #phi_new  /= np.linalg.norm(phi_new)
             #psi_new  /= np.linalg.norm(phi_new)
-            phi_error = np.linalg.norm(phi_new - phi)/np.linalg.norm(phi)
+            phi_error = np.linalg.norm(phi_new/np.linalg.norm(phi_new) - phi/np.linalg.norm(phi))
 
             iter += 1
             if talk==True and iter%1 == 0: print ("iteration %3i  alpha = %.10e  d_alpha = %.3e  phi_error = %.3e" %(iter,alpha,d_alpha,phi_error) )
