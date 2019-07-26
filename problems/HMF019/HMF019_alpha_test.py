@@ -39,9 +39,9 @@ def run(xs_file, I=2, N=2, L_max=1, note=''):
 
     bc = SN.BoundaryCondition(mesh, right='vacuum')
 
-    k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, bc, 'k', 'mg', mode='normal', L_max=L_max, tol=1e-8, max_its=200, k_exact=k_exact, DSA_opt=False, recomp_F=4, recomp_S=[2,8,8,16,16,16])
+    k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, bc, 'k', 'mg', mode='normal', L_max=L_max, tol=1e-8, max_its=1000, k_exact=k_exact, DSA_opt=False)
 
-    output_run_details(xs_file, mesh, L_max, 'MG', k)
+    #output_run_details(xs_file, mesh, L_max, 'MG', k)
 
     return k, phi, psi, runtime_mg, iter_dict
 # -----------------------------------------------------------------------------
@@ -63,12 +63,9 @@ Is = [100,250,500,1000]
 # needed for accuracy:
 # 250 cells, P5, S128 
 # -----------------------------------------------------------------------------
-dofs = [100,200,400,600,800]
-#mg_k, mg_k_error = run_dofs(dofs,'mg.xml',I=10,N=8,L_max=5,note='MG')
-mg_k, mg_k_error = run_dofs(dofs,'mg.xml',I=500,N=128,L_max=5,note='MG')
-
-
-
+dofs = [100]
+#dofs = [100]
+mg_k, mg_k_error = run_dofs(dofs,'mg.xml',I=50,N=2,L_max=1,note='MG')
 
 
 

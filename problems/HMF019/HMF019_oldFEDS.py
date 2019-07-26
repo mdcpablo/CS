@@ -29,8 +29,8 @@ def run(xs_file, I=2, N=2, L_max=1, note=''):
 
     I = int(10*int((I+5)/10))
     vacuum = SN.ZoneSpatialMesh('vacuum', 0, 4.029, num_cells=I/10, log_option=False)
-    heu = SN.ZoneSpatialMesh('heu', 4.029, 9.15, num_cells=I*8/10, log_option=False)
-    graphite = SN.ZoneSpatialMesh('graphite', 9.15, 12.6, num_cells=I/10, log_option=False)
+    heu = SN.ZoneSpatialMesh('heu', 4.029, 9.15, num_cells=I*7/10, log_option=False)
+    graphite = SN.ZoneSpatialMesh('graphite', 9.15, 12.6, num_cells=I*2/10, log_option=False)
 
     mesh = SN.GlobalMesh(mat_dict, [vacuum, heu, graphite], N, 5, 'sphere')
     mesh.print_energies()

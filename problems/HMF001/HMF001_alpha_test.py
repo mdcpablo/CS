@@ -25,6 +25,7 @@ def output_run_details(xs_file, mesh, L_max, comment, k):#, k, phi, psi, runtime
 def run(xs_file, I=2, N=2, L_max=1, note=''):
     mat_dict = {'hmf001': newGridXML2newGridObject.dict_to_object('xs/'+xs_file, 92001)}
 
+    #heu_1 = SN.ZoneSpatialMesh('hmf001', 0, 8.7407, num_cells=I, log_option=False)
     heu_1 = SN.ZoneSpatialMesh('hmf001', 0, 8.7407, num_cells=I, log_option=False)
 
     mesh = SN.GlobalMesh(mat_dict, [heu_1], N, 1, 'sphere')
@@ -34,7 +35,7 @@ def run(xs_file, I=2, N=2, L_max=1, note=''):
 
     bc = SN.BoundaryCondition(mesh, right='vacuum')
 
-    k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, bc, 'alpha', 'mg', mode='normal', L_max=L_max, tol=1e-8, max_its=60, k_exact=k_exact, DSA_opt=False)
+    k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, bc, 'alpha', 'mg', mode='normal', L_max=L_max, tol=1e-8, max_its=1000, k_exact=k_exact, DSA_opt=False)
 
     #output_run_details(xs_file, mesh, L_max, 'MG', k)
 
@@ -60,7 +61,7 @@ Is = [100,250,500,1000]
 # -----------------------------------------------------------------------------
 dofs = [100]
 #dofs = [100]
-mg_k, mg_k_error = run_dofs('HMF001_',dofs,'mg.xml',note='MG')
+mg_k, mg_k_error = run_dofs('HMF001_',dofs,'mg.xml',I=50,N=2)#, I=5, N=4, L_max=1, note='MG')
 
 
 

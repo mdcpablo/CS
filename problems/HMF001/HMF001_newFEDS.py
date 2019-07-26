@@ -34,7 +34,7 @@ def run(xs_file, I=2, N=2, L_max=1, note=''):
 
     bc = SN.BoundaryCondition(mesh, right='vacuum')
 
-    k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, bc, 'k', 'mg', mode='normal', L_max=L_max, tol=1e-8, max_its=50, k_exact=k_exact, DSA_opt=False)
+    k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, bc, 'k', 'mg', mode='normal', L_max=L_max, tol=1e-8, max_its=60, k_exact=k_exact, DSA_opt=False)
 
     output_run_details(xs_file, mesh, L_max, 'MG', k)
 
@@ -59,8 +59,8 @@ Is = [100,250,500,1000]
 # 500 cells, P5, S128 
 # -----------------------------------------------------------------------------
 #dofs = [100,200,400,600,800]
-dofs = [800]
-newfeds_k, newfeds_k_error = run_dofs('HMF001_',dofs,'newfeds.xml',I=250,N=128,L_max=5,note='new FEDS')
+dofs = [100,200,400,600,800]
+newfeds_k, newfeds_k_error = run_dofs('HMF001_',dofs,'newfeds.xml',I=500,N=128,L_max=5,note='new FEDS')
 
 
 
