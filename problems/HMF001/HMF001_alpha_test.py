@@ -61,9 +61,9 @@ Is = [100,250,500,1000]
 # needed for accuracy:
 # 250 cells, P5, S128 
 # -----------------------------------------------------------------------------
-dofs = [400]
+dofs = [100]
 #dofs = [100]
-mg_k, mg_k_error = run_dofs('HMF001_',dofs,'mg.xml',I=2,N=2,L_max=3)#, I=5, N=4, L_max=1, note='MG')
+mg_k, mg_k_error = run_dofs('HMF001_',dofs,'mg.xml',I=2,N=2,L_max=1)#, I=5, N=4, L_max=1, note='MG')
 
 #22.9
 #28.9

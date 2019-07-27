@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import copy
 from scipy import interpolate, special
 import scipy.sparse.linalg as linalg
 from numpy.polynomial.legendre import leggauss
@@ -249,6 +250,22 @@ class GlobalMesh:
         print "\nNumber of groups:", self.num_grps
         print "\n  emid = ", self.emid
         print "\n  de = ", self.de
+###################################################################################################
+class Physics:
+    def __init__(self, mesh):
+        self = self
+        self.phi = np.zeros((mesh.num_grps, mesh.nlgndr, mesh.num_cells)) 
+        self.phi[:,0,:] += np.ones((mesh.num_grps, mesh.num_cells))
+
+        self.c_phi = np.zeros((mesh.num_c_grps, mesh.nlgndr, mesh.num_cells)) 
+        self.c_phi[:,0,:] += np.ones((mesh.num_c_grps, mesh.num_cells))
+
+        self.psi = (1./mesh.num_angles)*np.ones((mesh.num_grps, mesh.num_angles, mesh.num_cells))
+        self.psi_left = (1./mesh.num_angles)*np.ones((mesh.num_grps, mesh.num_angles, mesh.num_cells))
+        self.psi_right = (1./mesh.num_angles)*np.ones((mesh.num_grps, mesh.num_angles, mesh.num_cells))
+
+        self.k = 1.
+        self.alpha = 0.
 ###################################################################################################
 class BoundaryCondition:
     def __init__(self, mesh, left='vacuum', right='vacuum', phi_left=0, phi_right=0, J_left=0, J_right=0, psi_left_mu1=0, psi_right_mu1=0, time_profile=0):
@@ -673,14 +690,10 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                     if F_eg != None: 
                         residual[g] += F_phi[g,m,i] - CF_phi[g,m,i]
         return abs(sum(residual))
-    #----------------------------------------------------------------------------------------------      
-    t = time.time()
-    phi = np.ones((G,L,I))
-    phi_new = np.ones((G,L,I))
-    phi_error = 1.;  iter = 0; t0 = time.time(); iteration_dict = []    
-    rho = 0; # spectral radius
-    B = 0;
-    geom = mesh.geom;
+    #----------------------------------------------------------------------------------------------   
+    t = time.time();  t0 = time.time()
+    phys = Physics(mesh); phys_old = Physics(mesh); phys_new = Physics(mesh); phi_error = 1.;   
+    iter = 0; iteration_dict = []; geom = mesh.geom; B = 0; rho = 0; # spectral radius
 
     if problem_type == "source":
         for mat in sorted(mesh.mat_dict.keys()):
@@ -697,12 +710,6 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
     if discretization == 'cs':
         c_phi_new = coarse(phi_new)
         mapping = mesh.mapping
-        S_eg_new = np.zeros((L,E,G,I))
-        F_eg_new = np.zeros((E,G,I))
-        for e in range(E):
-            for moment in range(L):
-                S_eg_new[moment, e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new);      S_eg_tot_count = S_eg_count
-            F_eg_new[e], F_eg_count = recompute_F_eg(e, phi_new, c_phi_new);                          F_eg_tot_count = F_eg_count 
 
         S_eg = np.zeros((L,E,G,I))
         F_eg = np.zeros((E,G,I))
@@ -710,26 +717,25 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
             for moment in range(L):
                 S_eg[moment, e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new);      S_eg_tot_count = S_eg_count
             F_eg[e], F_eg_count = recompute_F_eg(e, phi_new, c_phi_new);                          F_eg_tot_count = F_eg_count 
-        
+
+        S_eg_new = np.zeros((L,E,G,I))
+        F_eg_new = np.zeros((E,G,I))
+        for e in range(E):
+            for moment in range(L):
+                S_eg_new[moment, e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new);      S_eg_tot_count = S_eg_count
+            F_eg_new[e], F_eg_count = recompute_F_eg(e, phi_new, c_phi_new);                          F_eg_tot_count = F_eg_count 
+
         phi_ratio_at_prev_S_eg=np.zeros(G)
         phi_ratio_at_prev_F_eg=np.zeros(G)
 
+    """
     if problem_type == "source":
         print "\nCommencing source iterations:"
         tot_figure_of_merit=0; LHS_cost = 0; RHS_cost = 0;
 
-        #Q_ext = np.ones((G,N,I))*mesh.dx
         A = mesh.x_edges[-1] - mesh.x_edges[0]
-
         Q_ext = np.zeros((G,N,I))
-        '''
-        for g in range(G):
-            for m in range(N):
-                for i in range(I):
-                    Q_ext[g,m,i] = mesh.mu[m]*np.pi/A*np.cos(np.pi*mesh.x_mids[i]/A)+np.sin(np.pi*mesh.x_mids[i]/A)
-
-                    #Q_ext[g,m,i] = mesh.mu[m]*np.pi/A*np.cos(np.pi*mesh.x_mids[i]/A)+(mesh.sigt[0,0]-mesh.mat_p[sorted(mesh.mat_dict.keys())[0]][0][0,0])*np.sin(np.pi*mesh.x_mids[i]/A)
-        '''
+        #Q_ext = np.ones((G,N,I))*mesh.dx       
 
         while phi_error > tol*(1-rho) and iter < max_its+1 or (iter-1)%4 != 0: 
             phi_old = np.copy(phi)                
@@ -831,33 +837,32 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
             t0 = time.time()
         runtime = time.time() - t
         return phi_new, psi_new/np.linalg.norm(psi_new), runtime, iteration_dict
-
+    """
  
-    elif problem_type == "k":
+    if problem_type == "k":
         print "\nCommencing Power iterations to calculate k:"
-        k_new = 1.; k_error = 1.; tot_figure_of_merit=0; LHS_cost = 0; RHS_cost = 0;
-        V = mesh.V; psi_new = np.ones((G,N,I))
+        k_error = 1.; tot_figure_of_merit=0; LHS_cost = 0; RHS_cost = 0;
+        V = mesh.V; phys_F = Physics(mesh); phys_S = Physics(mesh)
         while (k_error > tol*(1-rho) or phi_error > tol*(1-rho)) and iter < max_its+1 or (iter-1)%4 != 0: 
-            phi_old = np.copy(phi)                
-            phi     = np.copy(phi_new)
-            psi     = np.copy(psi_new)
-            k       = np.copy(k_new)
+            phys_old = copy.copy(phys)                
+            phys     = copy.copy(phys_new)    
 
             if discretization == "mg":
                 S_tot_count = 0; F_tot_count = 0; H_tot_count = 0
 
                 #'''
-                S_phi, S_count = S(phi);       S_tot_count += S_count; 
-                F_phi, F_count = F(phi);       F_tot_count += F_count;   t_Q = (time.time() - t0)
+                S_phi, S_count = S(phys.phi);       S_tot_count += S_count; 
+                F_phi, F_count = F(phys.phi);       F_tot_count += F_count;   t_Q = (time.time() - t0)
 
-                phi_F, psi_F, psi_left_F, psi_right_F, H_count = invH(F_phi, geom);  H_tot_count += H_count;
-                phi_S, psi_S, psi_left_S, psi_right_S, H_count = invH(S_phi, geom);  H_tot_count += H_count;  t_H = (time.time() - t0) - t_Q
+                phys_S.phi, phys_S.psi,  phys_S.psi_left,  phys_S.psi_right, H_count = invH(S_phi, geom);  H_tot_count += H_count;  
+                phys_F.phi, phys_F.psi,  phys_F.psi_left,  phys_F.psi_right, H_count = invH(F_phi, geom);  H_tot_count += H_count; t_H = (time.time() - t0) - t_Q
 
-                k_new = inner_prod(psi, psi_F)/ (inner_prod(psi, psi) - inner_prod(psi, psi_S))
+                phys_new.k = inner_prod(phys.psi, phys_F.psi)/ (inner_prod(phys.psi, phys.psi) - inner_prod(phys.psi, phys_S.psi))
 
-                phi_new = phi_S + phi_F/k_new
-                psi_new = psi_S + psi_F/k_new
+                phys_new.phi = phys_S.phi + phys_F.phi/phys_new.k
+                phys_new.psi = phys_S.psi + phys_F.psi/phys_new.k
 
+                """
                 if mode=='debug':
                     print tot_source(Q)
                     print tot_rxn(phi_new)
@@ -865,6 +870,7 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                     print leak_right(psi_right_new)
                     balance = tot_source(Q) - tot_rxn(phi_new) - leak_left(psi_left_new) - leak_right(psi_right_new)
                     print "balance = ", balance
+                """
                 '''
                 S_phi, S_count = S(phi);                        S_tot_count += S_count; 
                 F_phi, F_count = F(phi);                        F_tot_count += F_count;
@@ -884,17 +890,17 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                 #'''
 
                 if DSA_opt == True:
-                    phi_new = DSA(phi_new,phi,k_new)
+                    phys_new.phi = DSA(phys_new.phi, phys.phi, phys_new.k)
 
-                phi_error = np.linalg.norm(phi_new - phi)
+                phi_error = np.linalg.norm(phys_new.phi - phys.phi)
 
                 if k_exact == None:
-		            k_error = np.abs(k_new - k)/k
+		            k_error = np.abs(phys_new.k - phys.k)/phys.k
                 else:
-                	k_error = abs(k_new - k_exact)/k_exact 
+                	k_error = abs(phys_new.k - k_exact)/k_exact 
 
                 if iter > 1:
-                    rho = np.linalg.norm( phi_new - phi ) / np.linalg.norm( phi - phi_old )
+                    rho = np.linalg.norm( phys_new.phi - phys.phi ) / np.linalg.norm( phys.phi - phys_old.phi )
                 rho = 0
                 print rho
 
@@ -906,7 +912,7 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                 RHS_cost += S_tot_count + F_tot_count 
                 runtime = time.time()-t
                 FOM_RT= tot_figure_of_merit/runtime
-                print ("iter %3i  k = %.8e  k_error = %.1e  phi_error = %.1e  t_Q:t_H = %.1f:%.1f  tot_runtime = %.1f\n" %(iter,k,k_error,phi_error,t_Q,t_H,runtime) )
+                print ("iter %3i  k = %.8e  k_error = %.1e  phi_error = %.1e  t_Q:t_H = %.1f:%.1f  tot_runtime = %.1f\n" %(iter,phys_new.k,k_error,phi_error,t_Q,t_H,runtime) )
                 print ("          tot_figure_of_merit = %.2e  RHS_cost = %.2e  H_count = %.2e  S_count = %.2e  F_count = %.2e\n\n" %(tot_figure_of_merit,RHS_cost, H_tot_count, S_tot_count, F_tot_count))
                                                                                         
             elif discretization == "cs":
@@ -999,18 +1005,19 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                 print ("          tot_figure_of_merit = %.2e  RHS_cost = %.2e  H_count = %.2e  CS_count = %.2e  CF_count = %.2e  S_eg_tot_count = %.2e  F_eg_tot_count = %.2e\n\n"                                                     %(tot_figure_of_merit, RHS_cost, H_tot_count, CS_tot_count, CF_tot_count, S_eg_tot_count, F_eg_tot_count) )
                               
             if L_max > 1:
-                iteration_dict.append({'runtime': runtime, 'k': np.copy(k_new), 'k_error': np.copy(k_error), 'phi_error': np.copy(phi_error), 'residual': np.copy(B),
+                iteration_dict.append({'runtime': runtime, 'k': np.copy(phys_new.k), 'k_error': np.copy(k_error), 'phi_error': np.copy(phi_error), 'residual': np.copy(B),
                                         'RHS_cost': RHS_cost, 'total_cost': tot_figure_of_merit, 
-                                        'flux':np.copy(phi_new[:,0,:]), 'current':np.copy(phi_new[:,1,:])})
+                                        'flux':np.copy(phys_new.phi[:,0,:]), 'current':np.copy(phys_new.phi[:,1,:])})
             else:
-                iteration_dict.append({'runtime': runtime, 'k': np.copy(k_new), 'k_error': np.copy(k_error), 'phi_error': np.copy(phi_error), 'residual': np.copy(B),
+                iteration_dict.append({'runtime': runtime, 'k': np.copy(phys_new.k), 'k_error': np.copy(k_error), 'phi_error': np.copy(phi_error), 'residual': np.copy(B),
                                         'RHS_cost': RHS_cost, 'total_cost': tot_figure_of_merit, 
-                                        'flux':np.copy(phi_new[:,0,:])})        
+                                        'flux':np.copy(phys_new.phi[:,0,:])})        
                 
             t0 = time.time()
         runtime = time.time() - t
-        return k_new, phi_new, psi_new/np.linalg.norm(psi_new), runtime, iteration_dict
+        return phys_new.k, phys_new.phi, phys_new.psi/np.linalg.norm(phys_new.psi), runtime, iteration_dict
 
+    """
     elif problem_type == "alpha":
         alpha = 0; old_alpha = 0; d_alpha = 1.; iter=0; psi_new = np.ones((G,N,I))
 
@@ -1097,5 +1104,6 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
 
         runtime = time.time() - t
         return alpha*1e-8, phi_new, psi_new/np.linalg.norm(psi_new), runtime
+        """
 ###################################################################################################
 
