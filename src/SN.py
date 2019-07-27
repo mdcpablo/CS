@@ -703,6 +703,13 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
             for moment in range(L):
                 S_eg_new[moment, e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new);      S_eg_tot_count = S_eg_count
             F_eg_new[e], F_eg_count = recompute_F_eg(e, phi_new, c_phi_new);                          F_eg_tot_count = F_eg_count 
+
+        S_eg = np.zeros((L,E,G,I))
+        F_eg = np.zeros((E,G,I))
+        for e in range(E):
+            for moment in range(L):
+                S_eg[moment, e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new);      S_eg_tot_count = S_eg_count
+            F_eg[e], F_eg_count = recompute_F_eg(e, phi_new, c_phi_new);                          F_eg_tot_count = F_eg_count 
         
         phi_ratio_at_prev_S_eg=np.zeros(G)
         phi_ratio_at_prev_F_eg=np.zeros(G)
@@ -839,7 +846,7 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
             if discretization == "mg":
                 S_tot_count = 0; F_tot_count = 0; H_tot_count = 0
 
-                '''
+                #'''
                 S_phi, S_count = S(phi);       S_tot_count += S_count; 
                 F_phi, F_count = F(phi);       F_tot_count += F_count;   t_Q = (time.time() - t0)
 
@@ -893,7 +900,6 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
 
                 iter += 1
 
-
                 figure_of_merit = H_tot_count + S_tot_count + F_tot_count
                 tot_figure_of_merit += figure_of_merit
                 LHS_cost += H_tot_count
@@ -904,26 +910,47 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                 print ("          tot_figure_of_merit = %.2e  RHS_cost = %.2e  H_count = %.2e  S_count = %.2e  F_count = %.2e\n\n" %(tot_figure_of_merit,RHS_cost, H_tot_count, S_tot_count, F_tot_count))
                                                                                         
             elif discretization == "cs":
-                CS_tot_count = 0; CF_tot_count = 0; H_tot_count = 0; S_eg_tot_count = 0; F_eg_tot_count = 0
+                CS_tot_count = 0; CF_tot_count = 0; H_tot_count = 0; S_eg_tot_count = 0; F_eg_tot_count = 0 
 
-                c_phi = np.copy(c_phi_new)                
-                S_eg  = np.copy(S_eg_new)  
-                F_eg  = np.copy(F_eg_new)    
+                c_phi = coarse(phi);   
 
-                CS_phi, CS_count = CS(c_phi,S_eg);                CS_tot_count += CS_count;
-                CF_phi, CF_count = CF(c_phi,F_eg);                CF_tot_count += CF_count;
-                Q = CS_phi + CF_phi/k;                            t_Q = time.time() - t0
-                phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q, geom); H_tot_count += H_count; 
-                c_phi_new = coarse(phi_new);                      t_H = (time.time() - t0) - t_Q
- 
                 for e in range(E):  
                     if iter%recomp_F==0:
-                        F_eg_new[e], F_eg_count = recompute_F_eg(e, phi_new, c_phi_new); F_eg_tot_count += F_eg_count 
+                        F_eg[e], F_eg_count = recompute_F_eg(e, phi, c_phi); F_eg_tot_count += F_eg_count 
                 
                 for moment in range(L):     
                     for e in range(E):  
                         if iter%recomp_S[moment] == 0:
-                            S_eg_new[moment,e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new); S_eg_tot_count += S_eg_count
+                            S_eg[moment,e], S_eg_count = recompute_S_eg(moment, e, phi, c_phi); S_eg_tot_count += S_eg_count
+
+                CS_phi, CS_count = CS(c_phi,S_eg);    CS_tot_count += CS_count;
+                CF_phi, CF_count = CF(c_phi,F_eg);    CF_tot_count += CF_count; t_Q = time.time() - t0
+
+                phi_F, psi_F, psi_left_F, psi_right_F, H_count = invH(CF_phi, geom);  H_tot_count += H_count;
+                phi_S, psi_S, psi_left_S, psi_right_S, H_count = invH(CS_phi, geom);  H_tot_count += H_count;  t_H = (time.time() - t0) - t_Q
+
+                k_new = inner_prod(psi, psi_F)/ (inner_prod(psi, psi) - inner_prod(psi, psi_S))
+
+                phi_new = phi_S + phi_F/k_new
+                psi_new = psi_S + psi_F/k_new
+
+                '''
+                c_phi = coarse(phi);   
+
+                for e in range(E):  
+                    if iter%recomp_F==0:
+                        F_eg[e], F_eg_count = recompute_F_eg(e, phi, c_phi); F_eg_tot_count += F_eg_count 
+                
+                for moment in range(L):     
+                    for e in range(E):  
+                        if iter%recomp_S[moment] == 0:
+                            S_eg[moment,e], S_eg_count = recompute_S_eg(moment, e, phi, c_phi); S_eg_tot_count += S_eg_count
+
+                CS_phi, CS_count = CS(c_phi,S_eg);                CS_tot_count += CS_count;
+                CF_phi, CF_count = CF(c_phi,F_eg);                CF_tot_count += CF_count;
+                    
+                Q = CS_phi + CF_phi/k;                            t_Q = time.time() - t0
+                phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q, geom); H_tot_count += H_count; t_H = (time.time() - t0) - t_Q
 
                 if mode=='debug':
                     print tot_source(Q)
@@ -933,26 +960,34 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                     balance = tot_source(Q) - tot_rxn(phi_new) - leak_left(psi_left_new) - leak_right(psi_right_new)
                     print "balance = ", balance
 
-                    B = residual(phi_new, c_phi_new, S_eg_new, F_eg=F_eg_new) 
-                    print "residual = ", B
-                        
-                k_new   = k*np.linalg.norm(CF(c_phi_new,F_eg_new)[0]*V)/np.linalg.norm(CF(c_phi,F_eg_new)[0]*V) 
+                    #B = residual(phi_new, c_phi_new, S_eg_new, F_eg=F_eg_new) 
+                    #print "residual = ", B
+
+                c_phi_new = coarse(phi_new);   
+                CF_phi_new, CF_count = CF(c_phi_new,F_eg);                CF_tot_count += CF_count;
+                
+                k_new   = k*np.linalg.norm(F(phi_new)[0]*V)/np.linalg.norm(F(phi)[0]*V)         
+                #k_new = k*np.linalg.norm(CF_phi_new*V)/np.linalg.norm(CF_phi*V)  
+                #k_new   = k*np.linalg.norm(CF(c_phi_new,F_eg)[0]*V)/np.linalg.norm(CF(c_phi,F_eg)[0]*V) 
+
+                '''
+
+                if DSA_opt == True:
+                    phi_new = DSA(phi_new,phi,k_new)
+
+                phi_error = np.linalg.norm(phi_new - phi)
+
                 if k_exact == None:
 		            k_error = np.abs(k_new - k)/k
                 else:
-                	k_error = abs(k_new - k_exact)/k_exact
-
-                phi_new  /= np.linalg.norm(phi_new)
-                phi_error = np.linalg.norm(phi_new - phi)/np.linalg.norm(phi)
-                c_phi_new = coarse(phi_new)
+                	k_error = abs(k_new - k_exact)/k_exact 
 
                 if iter > 1:
                     rho = np.linalg.norm( phi_new - phi ) / np.linalg.norm( phi - phi_old )
                 rho = 0
                 print rho
 
-                iter+=1
-
+                iter += 1
                 figure_of_merit = H_tot_count + CS_tot_count + CF_tot_count + S_eg_tot_count + F_eg_tot_count
                 tot_figure_of_merit += figure_of_merit
                 LHS_cost += H_tot_count
@@ -977,22 +1012,20 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
         return k_new, phi_new, psi_new/np.linalg.norm(psi_new), runtime, iteration_dict
 
     elif problem_type == "alpha":
-        alpha = 0; new_alpha = 0; d_alpha = 1.; iter=0; psi_new = np.ones((G,N,I))
+        alpha = 0; old_alpha = 0; d_alpha = 1.; iter=0; psi_new = np.ones((G,N,I))
 
-        min_alpha = -1e14
+        min_alpha = -1e6 #-1e13
         for i in range(I):
             for g in range(G):
                 min_alpha = max(min_alpha,-invV()[g,i]/mesh.sigt[g,i]*(1-1e-7))
-                print min_alpha             
+                print min_alpha  
+
+        max_alpha = 1e6 #1e13            
 
         while (abs(d_alpha) > tol*(1-rho) or phi_error > tol*(1-rho)) and iter < max_its:  
             phi_old = np.copy(phi)                
-            phi     = np.copy(phi_new) #/ np.linalg.norm(phi_new)
-            psi     = np.copy(psi_new) #/ np.linalg.norm(phi_new)  
-
-            if iter%1 == 0:
-                phi /= np.linalg.norm(phi_new)
-                psi /= np.linalg.norm(phi_new)    
+            phi     = phi_new / np.linalg.norm(phi_new)
+            psi     = psi_new / np.linalg.norm(phi_new)    
 
             if discretization == "mg":
                 S_tot_count = 0; F_tot_count = 0; H_tot_count = 0
@@ -1001,21 +1034,15 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
 
                 Q = S_phi + F_phi;                              t_Q = time.time() - t0
 
-                phi_Q, psi_Q, psi_left_SF, psi_right_SF, H_count = invH(Q, geom, t_abs=0.);  H_tot_count += H_count;  t_H = (time.time() - t0) - t_Q
+                phi_Q, psi_Q, psi_left_Q, psi_right_Q, H_count = invH(Q, geom);            H_tot_count += H_count;  
+                phi_V, psi_V, psi_left_V, psi_right_V, H_count = invH(invV(N)*psi, geom);  H_tot_count += H_count;
 
-                phi_V, psi_V, psi_left_invV, psi_right_invV, H_count = invH(invV(N)*psi, geom, t_abs=0.);  H_tot_count += H_count;  t_H = (time.time() - t0) - t_Q
-
-                new_alpha = (inner_prod(psi, psi_Q) - inner_prod(psi, psi)) / inner_prod(psi, psi_V)
-                new_alpha = max(new_alpha, min_alpha)
-                d_alpha = new_alpha - alpha
-                alpha = np.copy(new_alpha)
+                old_alpha = np.copy(alpha)
+                alpha = (inner_prod(psi, psi_Q) - inner_prod(psi, psi)) / inner_prod(psi, psi_V)
+                alpha = max(min(alpha, max_alpha), min_alpha)
+                d_alpha = alpha - old_alpha
 
                 phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q, geom, t_abs=alpha*invV());  H_tot_count += H_count;  t_H = (time.time() - t0) - t_Q
-
-                #Q = -alpha*invV(N)*psi + S_phi + F_phi;         
-                #phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q, geom, t_abs=0.); 
-                #phi_new = phi_Q - alpha*phi_V
-                #psi_new = psi_Q - alpha*psi_V
 
                 if mode=='debug':
                     print tot_source(Q)
@@ -1026,39 +1053,43 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                     print "balance = ", balance
 
             elif discretization == "cs":
-                c_phi = np.copy(c_phi_new)                
-                S_eg  = np.copy(S_eg_new)  
-                F_eg  = np.copy(F_eg_new)  
+                CS_tot_count = 0; CF_tot_count = 0; H_tot_count = 0; S_eg_tot_count = 0; F_eg_tot_count = 0
 
-                Q = CS(c_phi,S_eg) + CF(c_phi,F_eg);   t_Q = time.time() - t0
-                phi_new, psi_new, psi_left_new, psi_right_new = invH(Q, geom, t_abs=alpha*invV())
-                c_phi_new = coarse(phi_new);                     t_H = (time.time() - t0) - t_Q
+                phi = np.copy(phi_new)              
+                c_phi = coarse(phi)
 
                 for e in range(E):  
-                    update_S_eg = False  
-                    update_F_eg = False  
-                    for g in mapping[e]:
-                        if iter%1==0:
-                            update_S_eg = True   
-                        if iter%1==0:
-                            update_F_eg = True   
-                    
-                    if update_S_eg == True:
-                        S_eg_new[e] = recompute_S_eg(e, phi_new, c_phi_new)
-                    if update_F_eg == True:
-                        F_eg_new[e] = recompute_F_eg(e, phi_new, c_phi_new)  
+                    if iter%recomp_F==0:
+                        F_eg[e], F_eg_count = recompute_F_eg(e, phi, c_phi); F_eg_tot_count += F_eg_count 
+                
+                for moment in range(L):     
+                    for e in range(E):  
+                        if iter%recomp_S[moment] == 0:
+                            S_eg[moment,e], S_eg_count = recompute_S_eg(moment, e, phi, c_phi); S_eg_tot_count += S_eg_count
 
-                d_alpha = inner_prod(psi_new, CS(c_phi_new,S_eg_new)+CF(c_phi_new,F_eg_new)) / inner_prod(psi_new, invV(N)*psi_new) - \
-                          inner_prod(psi_new, CS(c_phi,S_eg)+CF(c_phi,F_eg)) / inner_prod(psi_new, invV(N)*psi_new)
-                alpha   += d_alpha 
+                CS_phi, CS_count = CS(c_phi,S_eg);                                       CS_tot_count += CS_count;
+                CF_phi, CF_count = CF(c_phi,F_eg);                                       CF_tot_count += CF_count;
 
-                alpha    = max(-max(mesh.sigt/mesh.invSpgrp), alpha)
+                Q = CS_phi + CF_phi;                                                     t_Q = time.time() - t0
 
-                # for supercritical problems
-                alpha    = max(0, alpha)
+                phi_Q, psi_Q, psi_left_Q, psi_right_Q, H_count = invH(Q, geom);           H_tot_count += H_count; 
+                phi_V, psi_V, psi_left_V, psi_right_V, H_count = invH(invV(N)*psi, geom); H_tot_count += H_count;
 
-            #phi_new  /= np.linalg.norm(phi_new)
-            #psi_new  /= np.linalg.norm(phi_new)
+                old_alpha = np.copy(alpha)
+                alpha = (inner_prod(psi, psi_Q) - inner_prod(psi, psi)) / inner_prod(psi, psi_V)
+                alpha = max(min(alpha, max_alpha), min_alpha)
+                d_alpha = alpha - old_alpha
+
+                phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q, geom, t_abs=alpha*invV());  H_tot_count += H_count;  t_H = (time.time() - t0) - t_Q
+
+                if mode=='debug':
+                    print tot_source(Q)
+                    print tot_rxn(phi_new)
+                    print leak_left(psi_left_new)
+                    print leak_right(psi_right_new)
+                    balance = tot_source(Q) - tot_rxn(phi_new) - leak_left(psi_left_new) - leak_right(psi_right_new)
+                    print "balance = ", balance     
+
             phi_error = np.linalg.norm(phi_new/np.linalg.norm(phi_new) - phi/np.linalg.norm(phi))
 
             iter += 1

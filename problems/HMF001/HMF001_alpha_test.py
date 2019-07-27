@@ -35,7 +35,7 @@ def run(xs_file, I=2, N=2, L_max=1, note=''):
 
     bc = SN.BoundaryCondition(mesh, right='vacuum')
 
-    k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, bc, 'alpha', 'mg', mode='normal', L_max=L_max, tol=1e-8, max_its=1000, k_exact=k_exact, DSA_opt=False)
+    k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, bc, 'k', 'mg', mode='normal', L_max=L_max, tol=1e-5, max_its=1000, k_exact=k_exact, DSA_opt=False, recomp_F=1, recomp_S=[1,4,4,4])
 
     #output_run_details(xs_file, mesh, L_max, 'MG', k)
 
@@ -50,7 +50,9 @@ def run_dofs(xs_filename_left, dofs, xs_filename_right, I=2, N=2, L_max=1, note=
         k_error_list.append(np.abs(k-k_exact))
     return k_list, k_error_list
 # -----------------------------------------------------------------------------
-k_exact = 1.00
+#k_exact = 1.00316276 #100
+#k_exact = 1.00156675 #200
+k_exact = 0.953341724 #400
 #dofs = [400,600] #[100,200,400,600,800]
 ps = [3,5]
 sn = [32,64,128,256]
@@ -59,11 +61,15 @@ Is = [100,250,500,1000]
 # needed for accuracy:
 # 250 cells, P5, S128 
 # -----------------------------------------------------------------------------
-dofs = [100]
+dofs = [400]
 #dofs = [100]
-mg_k, mg_k_error = run_dofs('HMF001_',dofs,'mg.xml',I=20,N=8,L_max=3)#, I=5, N=4, L_max=1, note='MG')
+mg_k, mg_k_error = run_dofs('HMF001_',dofs,'mg.xml',I=2,N=2,L_max=3)#, I=5, N=4, L_max=1, note='MG')
 
+#22.9
+#28.9
 
+#25.3
+#34.6
 
 
 
