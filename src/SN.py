@@ -785,6 +785,63 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
         phys_new.k = np.copy(k_new);
 
         return phys_new, F_eg, S_eg
+    #----------------------------------------------------------------------------------------------
+    def alpha_mg(phys, min_alpha=-1e10, max_alpha=1e10, method='rayleigh'):
+        phys_new = copy.copy(phys); phi = phys.phi; psi = phys.psi; alpha = phys.alpha
+
+        if method == 'rayleigh':
+            Q = S(phi)+F(phi)
+
+            phi_Q, psi_Q, psi_left_Q, psi_right_Q = invH(Q, geom)
+            phi_V, psi_V, psi_left_V, psi_right_V = invH(invV(N)*psi, geom)
+
+            alpha = (inner_prod(psi, psi_Q) - inner_prod(psi, psi)) / inner_prod(psi, psi_V)
+            alpha = max(min(alpha, max_alpha), min_alpha)
+
+            phi_new, psi_new, psi_left_new, psi_right_new = invH(Q, geom, t_abs=alpha*invV())
+
+        else:
+            print("ERROR: '%s' method not available" %method)
+
+        phys_new.phi = np.copy(phi_new); phys_new.psi = np.copy(psi_new); 
+        phys_new.alpha = np.copy(alpha);
+
+        return phys_new
+    #----------------------------------------------------------------------------------------------
+    def alpha_cs(phys, F_eg, S_eg, min_alpha=-1e10, max_alpha=1e10, method='rayleigh'):
+        phys_new = copy.copy(phys); phi = phys.phi; psi = phys.psi; alpha = phys.alpha
+
+        if method == 'rayleigh':
+            c_phi = coarse(phi);   
+
+            for e in range(E):  
+                if iter%recomp_F==0:
+                    F_eg[e] = recompute_F_eg(e, phi, c_phi)
+            CF_phi = CF(c_phi,F_eg)
+            
+            for moment in range(L):     
+                for e in range(E):  
+                    if iter%recomp_S[moment] == 0:
+                        S_eg[moment,e] = recompute_S_eg(moment, e, phi, c_phi)
+            CS_phi = CS(c_phi,S_eg)
+
+            Q = CS_phi + CF_phi
+
+            phi_Q, psi_Q, psi_left_Q, psi_right_Q = invH(Q, geom)
+            phi_V, psi_V, psi_left_V, psi_right_V = invH(invV(N)*psi, geom)
+
+            alpha = (inner_prod(psi, psi_Q) - inner_prod(psi, psi)) / inner_prod(psi, psi_V)
+            alpha = max(min(alpha, max_alpha), min_alpha)
+
+            phi_new, psi_new, psi_left_new, psi_right_new = invH(Q, geom, t_abs=alpha*invV())
+
+        else:
+            print("ERROR: '%s' method not available" %method)
+
+        phys_new.phi = np.copy(phi_new); phys_new.psi = np.copy(psi_new); 
+        phys_new.alpha = np.copy(alpha);
+
+        return phys_new, F_eg, S_eg
     #----------------------------------------------------------------------------------------------   
     t = time.time();  t0 = time.time()
     phys = Physics(mesh, L_max=L_max); phys_new = Physics(mesh, L_max=L_max); phi_error = 1.;   
@@ -813,14 +870,6 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                 S_eg[moment, e] = recompute_S_eg(moment, e, phys_new.phi, phys_new.c_phi)
             F_eg[e] = recompute_F_eg(e, phys_new.phi, phys_new.c_phi)
 
-        '''
-        S_eg_new = np.zeros((L,E,G,I))
-        F_eg_new = np.zeros((E,G,I))
-        for e in range(E):
-            for moment in range(L):
-                S_eg_new[moment, e] = recompute_S_eg(moment, e, phys_new.phi, phys_new.c_phi)
-            F_eg_new[e] = recompute_F_eg(e, phys_new.phi, phys_new.c_phi)
-        '''
         #phi_ratio_at_prev_S_eg=np.zeros(G)
         #phi_ratio_at_prev_F_eg=np.zeros(G)
 
@@ -946,45 +995,7 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
                 phys_new = k_mg(phys)
                                                                                         
             elif discretization == "cs":
-                print np.shape(phys_new.phi), np.shape(phys.phi)
                 phys_new, F_eg, S_eg = k_cs(phys, F_eg, S_eg)
-
-                '''
-                c_phi = coarse(phi);   
-
-                for e in range(E):  
-                    if iter%recomp_F==0:
-                        F_eg[e], F_eg_count = recompute_F_eg(e, phi, c_phi); F_eg_tot_count += F_eg_count 
-                
-                for moment in range(L):     
-                    for e in range(E):  
-                        if iter%recomp_S[moment] == 0:
-                            S_eg[moment,e], S_eg_count = recompute_S_eg(moment, e, phi, c_phi); S_eg_tot_count += S_eg_count
-
-                CS_phi, CS_count = CS(c_phi,S_eg);                CS_tot_count += CS_count;
-                CF_phi, CF_count = CF(c_phi,F_eg);                CF_tot_count += CF_count;
-                    
-                Q = CS_phi + CF_phi/k;                            t_Q = time.time() - t0
-                phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q, geom); H_tot_count += H_count; t_H = (time.time() - t0) - t_Q
-
-                if mode=='debug':
-                    print tot_source(Q)
-                    print tot_rxn(phi_new)
-                    print leak_left(psi_left_new)
-                    print leak_right(psi_right_new)
-                    balance = tot_source(Q) - tot_rxn(phi_new) - leak_left(psi_left_new) - leak_right(psi_right_new)
-                    print "balance = ", balance
-
-                    #B = residual(phi_new, c_phi_new, S_eg_new, F_eg=F_eg_new) 
-                    #print "residual = ", B
-
-                c_phi_new = coarse(phi_new);   
-                CF_phi_new, CF_count = CF(c_phi_new,F_eg);                CF_tot_count += CF_count;
-                
-                k_new   = k*np.linalg.norm(F(phi_new)[0]*V)/np.linalg.norm(F(phi)[0]*V)         
-                #k_new = k*np.linalg.norm(CF_phi_new*V)/np.linalg.norm(CF_phi*V)  
-                #k_new   = k*np.linalg.norm(CF(c_phi_new,F_eg)[0]*V)/np.linalg.norm(CF(c_phi,F_eg)[0]*V) 
-                '''
 
             if DSA_opt == True:
                 phys_new.phi = DSA(phys_new.phi, phys.phi, phys_new.k)
@@ -1014,93 +1025,33 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
         runtime = time.time() - t
         return phys_new.k, phys_new.phi, phys_new.psi/np.linalg.norm(phys_new.psi), runtime, iteration_dict
 
-    """
     elif problem_type == "alpha":
         alpha = 0; old_alpha = 0; d_alpha = 1.; iter=0; psi_new = np.ones((G,N,I))
 
-        min_alpha = -1e6 #-1e13
+        min_alpha = -1e10 
+        max_alpha =  1e10     
         for i in range(I):
             for g in range(G):
                 min_alpha = max(min_alpha,-invV()[g,i]/mesh.sigt[g,i]*(1-1e-7))
-                print min_alpha  
-
-        max_alpha = 1e6 #1e13            
+                print min_alpha        
 
         while (abs(d_alpha) > tol*(1-rho) or phi_error > tol*(1-rho)) and iter < max_its:  
-            phi_old = np.copy(phi)                
-            phi     = phi_new / np.linalg.norm(phi_new)
-            psi     = psi_new / np.linalg.norm(phi_new)    
+            phys_old = copy.copy(phys)                
+            phys     = copy.copy(phys_new)    
 
             if discretization == "mg":
-                S_tot_count = 0; F_tot_count = 0; H_tot_count = 0
-                S_phi, S_count = S(phi);                        S_tot_count += S_count; 
-                F_phi, F_count = F(phi);                        F_tot_count += F_count;
-
-                Q = S_phi + F_phi;                              t_Q = time.time() - t0
-
-                phi_Q, psi_Q, psi_left_Q, psi_right_Q, H_count = invH(Q, geom);            H_tot_count += H_count;  
-                phi_V, psi_V, psi_left_V, psi_right_V, H_count = invH(invV(N)*psi, geom);  H_tot_count += H_count;
-
-                old_alpha = np.copy(alpha)
-                alpha = (inner_prod(psi, psi_Q) - inner_prod(psi, psi)) / inner_prod(psi, psi_V)
-                alpha = max(min(alpha, max_alpha), min_alpha)
-                d_alpha = alpha - old_alpha
-
-                phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q, geom, t_abs=alpha*invV());  H_tot_count += H_count;  t_H = (time.time() - t0) - t_Q
-
-                if mode=='debug':
-                    print tot_source(Q)
-                    print tot_rxn(phi_new)
-                    print leak_left(psi_left_new)
-                    print leak_right(psi_right_new)
-                    balance = tot_source(Q) - tot_rxn(phi_new) - leak_left(psi_left_new) - leak_right(psi_right_new)
-                    print "balance = ", balance
-
+                phys_new = alpha_mg(phys, min_alpha=min_alpha, max_alpha=max_alpha)
+                                                                                        
             elif discretization == "cs":
-                CS_tot_count = 0; CF_tot_count = 0; H_tot_count = 0; S_eg_tot_count = 0; F_eg_tot_count = 0
+                phys_new, F_eg, S_eg = alpha_cs(phys, F_eg, S_eg, min_alpha=min_alpha, max_alpha=max_alpha)
 
-                phi = np.copy(phi_new)              
-                c_phi = coarse(phi)
-
-                for e in range(E):  
-                    if iter%recomp_F==0:
-                        F_eg[e], F_eg_count = recompute_F_eg(e, phi, c_phi); F_eg_tot_count += F_eg_count 
-                
-                for moment in range(L):     
-                    for e in range(E):  
-                        if iter%recomp_S[moment] == 0:
-                            S_eg[moment,e], S_eg_count = recompute_S_eg(moment, e, phi, c_phi); S_eg_tot_count += S_eg_count
-
-                CS_phi, CS_count = CS(c_phi,S_eg);                                       CS_tot_count += CS_count;
-                CF_phi, CF_count = CF(c_phi,F_eg);                                       CF_tot_count += CF_count;
-
-                Q = CS_phi + CF_phi;                                                     t_Q = time.time() - t0
-
-                phi_Q, psi_Q, psi_left_Q, psi_right_Q, H_count = invH(Q, geom);           H_tot_count += H_count; 
-                phi_V, psi_V, psi_left_V, psi_right_V, H_count = invH(invV(N)*psi, geom); H_tot_count += H_count;
-
-                old_alpha = np.copy(alpha)
-                alpha = (inner_prod(psi, psi_Q) - inner_prod(psi, psi)) / inner_prod(psi, psi_V)
-                alpha = max(min(alpha, max_alpha), min_alpha)
-                d_alpha = alpha - old_alpha
-
-                phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q, geom, t_abs=alpha*invV());  H_tot_count += H_count;  t_H = (time.time() - t0) - t_Q
-
-                if mode=='debug':
-                    print tot_source(Q)
-                    print tot_rxn(phi_new)
-                    print leak_left(psi_left_new)
-                    print leak_right(psi_right_new)
-                    balance = tot_source(Q) - tot_rxn(phi_new) - leak_left(psi_left_new) - leak_right(psi_right_new)
-                    print "balance = ", balance     
-
-            phi_error = np.linalg.norm(phi_new/np.linalg.norm(phi_new) - phi/np.linalg.norm(phi))
+            phi_error = np.linalg.norm(phys_new.phi/np.linalg.norm(phys_new.phi) - phys.phi/np.linalg.norm(phys.phi))
+            d_alpha = phys_new.alpha - phys.alpha
 
             iter += 1
-            if talk==True and iter%1 == 0: print ("iteration %3i  alpha = %.10e  d_alpha = %.3e  phi_error = %.3e" %(iter,alpha,d_alpha,phi_error) )
+            if talk==True and iter%1 == 0: print ("iteration %3i  alpha = %.10e  d_alpha = %.3e  phi_error = %.3e" %(iter,phys_new.alpha,d_alpha,phi_error) )
 
         runtime = time.time() - t
-        return alpha*1e-8, phi_new, psi_new/np.linalg.norm(psi_new), runtime
-        """
+        return alpha, phys_new.phi, phys_new.psi/np.linalg.norm(phys_new.psi), runtime
 ###################################################################################################
 

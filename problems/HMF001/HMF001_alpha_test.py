@@ -63,7 +63,7 @@ def run(xs_file, I=2, N=2, L_max=1, note=''):
     recomp_F = 1
     recomp_S = [1, 16, 16, 16, 16, 16, 16, 16, 16]
 
-    k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, bc, 'k', 'cs', mode='normal', L_max=L_max, tol=1e-5, max_its=1000, k_exact=k_exact, DSA_opt=False, recomp_F=recomp_F, recomp_S=recomp_S)
+    k, phi, psi, runtime_mg, iter_dict = SN.power_iterations(mesh, bc, 'alpha', 'cs', mode='normal', L_max=L_max, tol=1e-5, max_its=1000, k_exact=k_exact, DSA_opt=False, recomp_F=recomp_F, recomp_S=recomp_S)
 
     comment = 'cs, recomp_F='+str(recomp_F)+', recomp_S='+str(recomp_S)
     #output_run_details(xs_file, mesh, L_max, comment, k, runtime_mg, iter_dict)
