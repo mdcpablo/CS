@@ -682,7 +682,7 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
         B = tot_rxn(phi)
         C = leak_left(psi_left)
         D = leak_right(psi_right)
-        balance = A - B - C - D
+        balance = (A - B - C - D)/A
 
         print("------------------------------") 
         print("total source = %.2e" %A)
@@ -692,6 +692,41 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
         print("------------------------------") 
         print("balance = %.2e" %balance) 
         print("------------------------------") 
+    #----------------------------------------------------------------------------------------------
+    def source_mg(phys, Q_ext):
+        phys_new = copy.copy(phys); phi = phys.phi; psi = phys.psi
+
+        Q = S(phi) + F(phi) + Q_ext
+        phi_new, psi_new, psi_left_new, psi_right_new = invH(Q, geom)
+        #determine_balance(Q, phi_new, psi_left_new, psi_right_new)
+
+        phys_new.phi = np.copy(phi_new); phys_new.psi = np.copy(psi_new); 
+
+        return phys_new
+    #----------------------------------------------------------------------------------------------
+    def source_cs(phys, Q_ext, F_eg, S_eg):
+        phys_new = copy.copy(phys); phi = phys.phi; psi = phys.psi   
+
+        c_phi = coarse(phi);   
+
+        Q = CS(c_phi,S_eg) + CF(c_phi,F_eg) + Q_ext
+        phi_new, psi_new, psi_left_new, psi_right_new = invH(Q, geom)
+        #determine_balance(Q, phi_new, psi_left_new, psi_right_new)
+
+        c_phi_new = coarse(phi_new)
+
+        for e in range(E):  
+            if iter%recomp_F==0:
+                F_eg[e] = recompute_F_eg(e, phi_new, c_phi_new)
+
+        for moment in range(L):     
+            for e in range(E):  
+                if iter%recomp_S[moment] == 0:
+                    S_eg[moment,e] = recompute_S_eg(moment, e, phi_new, c_phi_new)
+
+        phys_new.phi = np.copy(phi_new); phys_new.psi = np.copy(psi_new); 
+
+        return phys_new, F_eg, S_eg
     #----------------------------------------------------------------------------------------------
     def k_mg(phys, method='power'):
         phys_new = copy.copy(phys); phi = phys.phi; psi = phys.psi; k = phys.k 
@@ -847,143 +882,50 @@ def power_iterations(mesh, bc, problem_type, discretization, mode='normal', L_ma
     phys = Physics(mesh, L_max=L_max); phys_new = Physics(mesh, L_max=L_max); phi_error = 1.;   
     iter = 0; iteration_dict = []; geom = mesh.geom; B = 0; rho = 0; # spectral radius
 
-    if problem_type == "source":
-        for mat in sorted(mesh.mat_dict.keys()):
-            for moment in range(N):
-                mesh.mat_p[mat][0] *= 0.
-                mesh.mat_coarse_p[mat][0] *= 0.
-            #mesh.mat_sigf[mat] *= 0.
-            #mesh.mat_coarse_sigf[mat] *= 0.
-
-        for mat in sorted(mesh.mat_dict.keys()):
-            mesh.mat_p[mat][0] += mesh.mat_sigf[mat]
-            mesh.mat_coarse_p[mat][0] += mesh.mat_coarse_sigf[mat]
-
     if discretization == 'cs':
-        phys_new.c_phi = coarse(phys_new.phi)
-        mapping = mesh.mapping
-
         S_eg = np.zeros((L,E,G,I))
         F_eg = np.zeros((E,G,I))
         for e in range(E):
             for moment in range(L):
                 S_eg[moment, e] = recompute_S_eg(moment, e, phys_new.phi, phys_new.c_phi)
             F_eg[e] = recompute_F_eg(e, phys_new.phi, phys_new.c_phi)
-
-        #phi_ratio_at_prev_S_eg=np.zeros(G)
-        #phi_ratio_at_prev_F_eg=np.zeros(G)
-
-    """
     if problem_type == "source":
         print "\nCommencing source iterations:"
-        tot_figure_of_merit=0; LHS_cost = 0; RHS_cost = 0;
 
-        A = mesh.x_edges[-1] - mesh.x_edges[0]
-        Q_ext = np.zeros((G,N,I))
+        Q_ext = np.ones((G,N,I))
         #Q_ext = np.ones((G,N,I))*mesh.dx       
 
         while phi_error > tol*(1-rho) and iter < max_its+1 or (iter-1)%4 != 0: 
-            phi_old = np.copy(phi)                
-            phi     = np.copy(phi_new)
+            phys_old = copy.copy(phys)                
+            phys     = copy.copy(phys_new)
 
             if discretization == "mg":
-                S_tot_count = 0; H_tot_count = 0
-
-                S_phi, S_count = S(phi);                        S_tot_count += S_count; print np.linalg.norm(S_phi.flatten())
-                Q = S_phi + Q_ext;                              t_Q = time.time() - t0
-                phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q, geom);    H_tot_count += H_count;  t_H = (time.time() - t0) - t_Q
-
-                if mode=='debug':
-                    #print "psi", psi_new
-                    #print 
-                    #print "phi", phi_new
-                    print tot_source(Q)
-                    print tot_rxn(phi_new)
-                    print leak_right(psi_right_new)
-                    print leak_left(psi_left_new)
-                    balance = tot_source(Q) - tot_rxn(phi_new) - leak_left(psi_left_new) - leak_right(psi_right_new)
-                    print "balance = ", np.linalg.norm(balance) 
-                
-                phi_error = np.linalg.norm(phi_new - phi)
-
-                if iter > 1:
-                    rho = np.linalg.norm( phi_new - phi ) / np.linalg.norm( phi - phi_old )
-                #print rho
-
-                iter += 1
-
-                figure_of_merit = H_tot_count + S_tot_count 
-                tot_figure_of_merit += figure_of_merit
-                LHS_cost += H_tot_count
-                RHS_cost += S_tot_count 
-                runtime = time.time()-t
-                FOM_RT= tot_figure_of_merit/runtime
-                print ("iter %3i  phi_error = %.1e  t_Q:t_H = %.1f:%.1f  tot_runtime = %.1f\n" 
-                                                                        %(iter,phi_error,t_Q,t_H,runtime) )
-                print ("          tot_figure_of_merit = %.2e  RHS_cost = %.2e  H_count = %.2e  S_count = %.2e\n\n" %(tot_figure_of_merit,RHS_cost, H_tot_count, S_tot_count))
-
-                                                                                        
+                phys_new = source_mg(phys, Q_ext)
+                                                                                      
             elif discretization == "cs":
-                CS_tot_count = 0; H_tot_count = 0; S_eg_tot_count = 0
-
-                c_phi = np.copy(c_phi_new) 
-                S_eg  = np.copy(S_eg_new)    
-
-                CS_phi, CS_count = CS(c_phi,S_eg);                CS_tot_count += CS_count; print np.linalg.norm(CS_phi.flatten())
-                Q = CS_phi + Q_ext;                               t_Q = time.time() - t0
-                phi_new, psi_new, psi_left_new, psi_right_new, H_count = invH(Q, geom);              H_tot_count += H_count; 
-                c_phi_new = coarse(phi_new);                      t_H = (time.time() - t0) - t_Q
- 
-                for moment in range(L):     
-                    for e in range(E):  
-                        if iter%recomp[moment] == 0:
-                            S_eg_new[moment,e], S_eg_count = recompute_S_eg(moment, e, phi_new, c_phi_new);      S_eg_tot_count += S_eg_count
-
-                if mode=='debug':
-                    #print tot_source(phi_new, Q_ext)
-                    #print tot_rxn(phi_new)
-                    #print leak_left(psi_left_new)
-                    #print leak_right(psi_right_new)
-                    #balance = tot_source(phi_new, Q_ext) - tot_rxn(phi_new) - leak_left(psi_left_new) - leak_right(psi_right_new)
-                    #print "balance = ", np.linalg.norm(balance)
-
-                    B = residual(phi_new, c_phi_new, S_eg_new) 
-                    print "residual = ", B
-                    
+                phys_new, F_eg, S_eg = source_cs(phys, Q_ext, F_eg, S_eg)
                             
-                phi_error = np.linalg.norm(phi_new - phi)/np.linalg.norm(phi)
+            phi_error = np.linalg.norm(phys_new.phi - phys.phi)/np.linalg.norm(phys.phi)
 
-                if iter > 1:
-                    rho = np.linalg.norm( phi_new - phi ) / np.linalg.norm( phi - phi_old )
-                #print rho
+            if iter > 1:
+                rho = np.linalg.norm( phys_new.phi - phys.phi ) / np.linalg.norm( phys.phi - phys_old.phi )
+            #print rho
 
-                iter+=1
+            iter+=1
 
-                figure_of_merit = H_tot_count + CS_tot_count + S_eg_tot_count
-                tot_figure_of_merit += figure_of_merit
-                LHS_cost += H_tot_count
-                RHS_cost += CS_tot_count + S_eg_tot_count 
-                runtime = time.time()-t
-                FOM_RT= tot_figure_of_merit/runtime
-                print ("iter %3i  phi_error = %.1e  t_Q:t_H = %.1f:%.1f  tot_runtime = %.1f\n" 
-                                                                        %(iter,phi_error,t_Q,t_H,runtime) )
-                print ("          tot_figure_of_merit = %.2e  RHS_cost = %.2e  H_count = %.2e  CS_count = %.2e  S_eg_tot_count = %.2e \n\n"                                                     %(tot_figure_of_merit, RHS_cost, H_tot_count, CS_tot_count, S_eg_tot_count) )
-                                                                                    
+            runtime = time.time()-t
+            print ("iter %3i  phi_error = %.1e  tot_runtime = %.1f\n" %(iter,phi_error,runtime) )
+                                                                                
             
             if L_max > 1:
                 iteration_dict.append({'runtime': runtime, 'phi_error': np.copy(phi_error),
-                                        'RHS_cost': RHS_cost, 'total_cost': tot_figure_of_merit, 
-                                        'flux':np.copy(phi_new[:,0,:]), 'current':np.copy(phi_new[:,1,:])})
+                                        'flux':np.copy(phys_new.phi[:,0,:]), 'current':np.copy(phys_new.phi[:,1,:])})
             else:
-                iteration_dict.append({'runtime': runtime, 'phi_error': np.copy(phi_error),
-                                        'RHS_cost': RHS_cost, 'total_cost': tot_figure_of_merit, 
-                                        'flux':np.copy(phi_new[:,0,:])})        
+                iteration_dict.append({'runtime': runtime, 'phi_error': np.copy(phi_error), 'flux':np.copy(phys_new.phi[:,0,:])})        
                 
-            t0 = time.time()
         runtime = time.time() - t
-        return phi_new, psi_new/np.linalg.norm(psi_new), runtime, iteration_dict
-    """
- 
+        return phys_new.phi, phys_new.psi/np.linalg.norm(phys_new.psi), runtime, iteration_dict
+
     if problem_type == "k":
         print "\nCommencing Power iterations to calculate k:"
         k_error = 1.; V = mesh.V; phys_F = Physics(mesh); phys_S = Physics(mesh)
