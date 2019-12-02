@@ -1,10 +1,8 @@
 import sys
-sys.path.append('/home/pablo/CS/src')
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import SN 
-import newGridXML2newGridObject
+from cs import sn, newGridXML2newGridObject
 ###############################################################################
 mg_runtimes = []
 cs_runtimes = []
@@ -15,14 +13,14 @@ CG = 1
 
 mat_dict = {'hmf001': newGridXML2newGridObject.dict_to_object('hmf001_'+str(G)+'mg.xml', 92001)}
 
-heu_1 = SN.ZoneSpatialMesh('hmf001', 0, 8, num_cells=20, log_option=False)
+heu_1 = sn.ZoneSpatialMesh('hmf001', 0, 8, num_cells=20, log_option=False)
 
-mesh = SN.GlobalMesh(mat_dict, [heu_1], 32, CG, 'slab')
+mesh = sn.GlobalMesh(mat_dict, [heu_1], 32, CG, 'slab')
 mesh.print_energies()
 mesh.print_angles()
 mesh.print_space(v=0)
 
-k, phi, psi, runtime_cs, iter_dict = SN.power_iterations(mesh, 'k', 'mg', mode='not debug', L_max=4, tol=1e-5, max_its=1000, k_exact=k_exact)
+k, phi, psi, runtime_cs, iter_dict = sn.power_iterations(mesh, 'k', 'mg', mode='not debug', L_max=4, tol=1e-5, max_its=1000, k_exact=k_exact)
 
 print runtime_cs
 

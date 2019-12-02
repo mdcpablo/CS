@@ -1,0 +1,10 @@
+README.md
+setup.py
+cs/__init__.py
+cs/newGridXML2newGridObject.py
+cs/sn.py
+cs.egg-info/PKG-INFO
+cs.egg-info/SOURCES.txt
+cs.egg-info/dependency_links.txt
+cs.egg-info/requires.txt
+cs.egg-info/top_level.txt

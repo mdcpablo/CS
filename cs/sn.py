@@ -148,12 +148,14 @@ class GlobalMesh:
             self.mat_sigf[mat] = mat_dict[mat].sigf
             self.mat_p[mat] = mat_dict[mat].p  
             self.mat_invSpgrp[mat] = mat_dict[mat].invSpgrp
-            if '18' in mat_dict[mat].crossSectionMTList: 
+            print mat_dict[mat].crossSectionMTList
+
+            if '18' in mat_dict[mat].crossSectionMTList.split(','):
                 self.mat_sigf_MT18[mat] = mat_dict[mat].sigf_MT18
                 self.mat_chid[mat] = mat_dict[mat].pdt_chid
                 self.mat_beta_fnubar[mat] = mat_dict[mat].pdt_beta_fnubar
-            #else:
-            #    self.mat_sigf_MT18[mat] = mat_dict[mat].sigf_tot
+            else:
+                self.mat_sigf_MT18[mat] = np.zeros(np.shape(mat_dict[mat].sigt))
 
         self.sigt        = np.zeros((self.num_grps, self.num_cells))
         for i in range(self.num_cells):
