@@ -1,0 +1,8 @@
+xs_file = HMF001_400oldfeds_5EperCG.xml 
+G = 400 
+I = 250 
+N = 128 
+P = 5 
+
+RESULTS
+k = 0.998329762902 

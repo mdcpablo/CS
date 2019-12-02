@@ -1,0 +1,8 @@
+xs_file = 400newfeds.xml 
+G = 400 
+I = 500 
+N = 128 
+P = 5 
+
+RESULTS
+k = 0.978232819273 

@@ -1,8 +1,0 @@
-xs_file = HMF001_600mg.xml 
-G = 600 
-I = 250 
-N = 128 
-P = 5 
-
-RESULTS
-k = 0.996806336568 

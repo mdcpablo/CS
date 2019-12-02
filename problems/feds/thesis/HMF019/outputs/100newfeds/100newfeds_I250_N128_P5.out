@@ -1,0 +1,8 @@
+xs_file = 100newfeds.xml 
+G = 100 
+I = 250 
+N = 128 
+P = 5 
+
+RESULTS
+k = 0.991128711119 

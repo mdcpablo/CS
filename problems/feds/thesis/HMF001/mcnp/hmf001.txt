@@ -1,0 +1,11 @@
+c Godiva is a critical bare sphere of uranium
+100    1000  -18.74  -10  imp:n=1   $ enriched uranium sphere (godiva)
+999    0              10  imp:n=0   $ all space outside the sphere
+
+10     so 8.7407               $ radius of the godiva sphere
+
+c skip 10 and run a total of 110 keff cycles with 1000 neutrons per cycle
+kcode 100000 1.0 500 5000     $ kcode defines a criticality calculation
+ksrc  0 0 0                    $ initial keff spatial dist is point at origin
+m1000  92235.90c 4.4994E-02  92238.90c 2.4984E-03  92234.90c 4.9184E-04  $ define u with number densities
+print                          $ more useful information in the output file

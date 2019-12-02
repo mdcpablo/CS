@@ -1,13 +1,15 @@
-import os
+import os,sys
 
-for g in [100,200,400,600,800]:
-    g = int(g)
-    os.system('cp /home/pablo/barnfire/dissertation_problems/hmf019_%img/BarnfireXS_Carbon12_%i.xml HMF019/xs/Carbon12_%img.xml' %(g,g,g))
-    os.system('cp /home/pablo/barnfire/dissertation_problems/hmf019_%img/BarnfireXS_UnpolutedAir_%i.xml HMF019/xs/Air_%img.xml' %(g,g,g))
-    os.system('cp /home/pablo/barnfire/dissertation_problems/hmf019_%img/BarnfireXS_HEU19_%i.xml HMF019/xs/HEU19_%img.xml' %(g,g,g))
-    os.system('cp /home/pablo/barnfire/dissertation_problems/hmf019_%ioldfeds_5EperCG/BarnfireXS_Carbon12_%i.xml HMF019/xs/Carbon12_%ioldfeds_5EperCG.xml' %(g,g,g))
-    os.system('cp /home/pablo/barnfire/dissertation_problems/hmf019_%ioldfeds_5EperCG/BarnfireXS_UnpolutedAir_%i.xml HMF019/xs/Air_%ioldfeds_5EperCG.xml' %(g,g,g))
-    os.system('cp /home/pablo/barnfire/dissertation_problems/hmf019_%ioldfeds_5EperCG/BarnfireXS_HEU19_%i.xml HMF019/xs/HEU19_%ioldfeds_5EperCG.xml' %(g,g,g))
-    os.system('cp /home/pablo/barnfire/dissertation_problems/hmf019_%inewfeds/BarnfireXS_Carbon12_%i.xml HMF019/xs/Carbon12_%inewfeds.xml' %(g,g,g))
-    os.system('cp /home/pablo/barnfire/dissertation_problems/hmf019_%inewfeds/BarnfireXS_UnpolutedAir_%i.xml HMF019/xs/Air_%inewfeds.xml' %(g,g,g))
-    os.system('cp /home/pablo/barnfire/dissertation_problems/hmf019_%inewfeds/BarnfireXS_HEU19_%i.xml HMF019/xs/HEU19_%inewfeds.xml' %(g,g,g))
+prob_lowercase = 'hmf019'
+prob_uppercase = 'HMF019'
+xs = 'feds_nocg'
+from_mats = ['UnpolutedAir', 'Carbon12', 'HEU19']
+to_mats = ['Air', 'Carbon12', 'HEU19']
+
+new_path = os.path.join(os.path.join(prob_uppercase,'xs'),xs)
+os.system('mkdir %s' %new_path)
+
+G = [50,100,150,200,250,300,350,400,500,600]
+for g in G:   
+    for i in range(len(from_mats)):
+        os.system('cp /home/pablo/barnfire/dissertation_problems/%s/%s/%i/BarnfireXS_%s_%i.xml %s/xs/%s/%s_%i.xml' %(prob_lowercase,xs,g,from_mats[i],g,prob_uppercase,xs,to_mats[i],g))
